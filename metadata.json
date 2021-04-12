@@ -1,0 +1,8 @@
+{
+  "name": "Graph",
+  "creator": "Squagward",
+  "version": "1.0.0",
+  "entry": "index.js",
+  "requires": ["Elementa", "fparser"],
+  "$schema": "../CTAutocomplete/schema.json"
+}
