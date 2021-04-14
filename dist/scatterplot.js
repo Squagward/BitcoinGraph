@@ -1,5 +1,5 @@
 import * as Elementa from "../../Elementa/index";
-import { Line, Point } from "./wrappers";
+import { Line, Point } from "./customShapes";
 class ScatterPlot {
     constructor(width, height, backgroundColor) {
         this.width = width;
@@ -29,8 +29,8 @@ class ScatterPlot {
         this.yMin = -10;
         this.yMax = 10;
         this.zoom = 1;
-        this.xStep = this.width / (this.xMax - this.xMin);
-        this.yStep = this.height / (this.yMax - this.yMin);
+        this.scaleX = this.width / (this.xMax - this.xMin);
+        this.scaleY = this.height / (this.yMax - this.yMin);
         this.offsetX = -this.screenCenterX;
         this.offsetY = -this.screenCenterY;
         this.xAxis = new Line(this.left, this.graphToScreen(this.xMin, 0).y, this.right, this.graphToScreen(this.xMax, 0).y, 1, 1, 0, 0);
@@ -63,15 +63,20 @@ class ScatterPlot {
             this.updateAxes();
             this.updatePoints();
         });
+        console.log(JSON.stringify(this.graphToScreen(10, 10)));
     }
+    // holy shit it actually works
     graphToScreen(x, y) {
-        const outX = (x - this.offsetX) * this.zoom;
-        const outY = this.screenHeight - (y - this.offsetY) * this.zoom;
+        const outX = (x - this.offsetX) * this.zoom + this.scaleX * this.zoom * x;
+        const outY = this.screenHeight -
+            ((y - this.offsetY) * this.zoom + this.scaleY * this.zoom * y);
         return { x: outX, y: outY };
     }
+    // holy shit it actually works
     screenToGraph(x, y) {
-        const outX = x / this.zoom + this.offsetX;
-        const outY = (this.screenHeight - y) / this.zoom + this.offsetY;
+        const outX = (x - this.scaleX * this.zoom * x) / this.zoom + this.offsetX;
+        const outY = (this.screenHeight - y - this.scaleY * this.zoom * y) / this.zoom +
+            this.offsetY;
         return { x: outX, y: outY };
     }
     updateAxes() {
@@ -96,11 +101,10 @@ class ScatterPlot {
         }
         const topLeft = this.screenToGraph(this.left, this.top);
         const bottomRight = this.screenToGraph(this.right, this.bottom);
-        this.xMin = topLeft.x / this.xStep;
-        this.yMin = topLeft.y / this.yStep;
-        this.xMax = bottomRight.x / this.xStep;
-        this.yMax = bottomRight.y / this.yStep;
-        console.log(this.xMin.toFixed(2), this.xMax.toFixed(2), this.yMin.toFixed(2), this.yMax.toFixed(2));
+        this.xMin = topLeft.x / this.zoom;
+        this.yMin = topLeft.y / this.zoom;
+        this.xMax = bottomRight.x / this.zoom;
+        this.yMax = bottomRight.y / this.zoom;
     }
     updatePoints() {
         this.screenPoints = [];
@@ -118,10 +122,10 @@ class ScatterPlot {
             point.y >= this.top &&
             point.y <= this.bottom);
     }
-    addPoint(point) {
-        this.plotPoints.push(point);
-        const { x, y } = this.graphToScreen(point.x, point.y);
-        const newPoint = new Point(x, y, point.thickness);
+    addPoint(pt) {
+        this.plotPoints.push(pt);
+        const { x, y } = this.graphToScreen(pt.x, pt.y);
+        const newPoint = new Point(x, y, pt.thickness);
         if (!this.inGraphBounds(newPoint))
             return;
         this.screenPoints.push(newPoint);

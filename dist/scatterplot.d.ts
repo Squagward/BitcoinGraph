@@ -1,7 +1,6 @@
 /// <reference types="../../ctautocomplete/index" />
-import { Plot } from "./utils";
-import { Point } from "./wrappers";
-declare class ScatterPlot implements Plot {
+import { Point } from "./customShapes";
+declare class ScatterPlot {
     width: number;
     height: number;
     backgroundColor: JavaTColor;
@@ -21,8 +20,8 @@ declare class ScatterPlot implements Plot {
     yMin: number;
     yMax: number;
     zoom: number;
-    xStep: number;
-    yStep: number;
+    scaleX: number;
+    scaleY: number;
     offsetX: number;
     offsetY: number;
     private xAxis;
@@ -37,7 +36,7 @@ declare class ScatterPlot implements Plot {
     private updateAxes;
     private updatePoints;
     private inGraphBounds;
-    addPoint(point: Point): void;
+    addPoint(pt: Point): void;
     addPoints(points: Point[]): void;
     draw(): void;
     open(): void;

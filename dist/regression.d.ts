@@ -1,4 +1,4 @@
-import { Point } from "./wrappers";
+import { Point } from "./customShapes";
 declare const linearRegression: (data: Point[]) => {
     a: number;
     b: number;

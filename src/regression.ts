@@ -1,4 +1,4 @@
-import { Point } from "./wrappers";
+import { Point } from "./customShapes";
 
 const linearRegression = (data: Point[]) => {
   const N = data.length;
