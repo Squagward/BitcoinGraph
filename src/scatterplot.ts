@@ -1,5 +1,5 @@
 import * as Elementa from "../../Elementa/index";
-import { Line, Point } from "./customShapes";
+const GL11 = Java.type("org.lwjgl.opengl.GL11");
 
 class ScatterPlot {
   gui: Gui;
@@ -10,9 +10,9 @@ class ScatterPlot {
   bottom: number;
 
   /** Graph coordinates */
-  private plotPoints: Point[];
+  private plotPoints: [number, number][];
   /** Screen coordinates */
-  private screenPoints: Point[];
+  private screenPoints: [number, number][];
 
   private background: Elementa.UIBlock;
   private window: Elementa.Window;
@@ -29,8 +29,8 @@ class ScatterPlot {
   offsetX: number;
   offsetY: number;
 
-  private xAxis: Line;
-  private yAxis: Line;
+  private xAxis: [number, number, number, number];
+  private yAxis: [number, number, number, number];
 
   private readonly screenWidth = Renderer.screen.getWidth();
   private readonly screenHeight = Renderer.screen.getHeight();
@@ -76,26 +76,18 @@ class ScatterPlot {
     this.offsetX = -this.screenCenterX;
     this.offsetY = -this.screenCenterY;
 
-    this.xAxis = new Line(
+    this.xAxis = [
       this.left,
       this.graphToScreen(this.xMin, 0).y,
       this.right,
-      this.graphToScreen(this.xMax, 0).y,
-      1,
-      1,
-      0,
-      0
-    );
-    this.yAxis = new Line(
+      this.graphToScreen(this.xMax, 0).y
+    ];
+    this.yAxis = [
       this.graphToScreen(0, this.yMax).x,
       this.top,
       this.graphToScreen(0, this.yMin).x,
-      this.bottom,
-      1,
-      1,
-      0,
-      0
-    );
+      this.bottom
+    ];
 
     // @ts-ignore
     this.window = new Elementa.Window().addChild(this.background);
@@ -129,11 +121,8 @@ class ScatterPlot {
       this.updateAxes();
       this.updatePoints();
     });
-
-    console.log(JSON.stringify(this.graphToScreen(10, 10)));
   }
 
-  // holy shit it actually works
   private graphToScreen(x: number, y: number) {
     const outX = (x - this.offsetX) * this.zoom + this.scaleX * this.zoom * x;
     const outY =
@@ -143,7 +132,6 @@ class ScatterPlot {
     return { x: outX, y: outY };
   }
 
-  // holy shit it actually works
   private screenToGraph(x: number, y: number) {
     const outX = (x - this.scaleX * this.zoom * x) / this.zoom + this.offsetX;
     const outY =
@@ -156,21 +144,29 @@ class ScatterPlot {
     let { x: xZero, y: yZero } = this.graphToScreen(0, 0);
 
     if (yZero <= this.bottom && yZero >= this.top) {
-      this.xAxis.setStartPos(this.left, yZero);
-      this.xAxis.setEndPos(this.right, yZero);
+      this.xAxis[0] = this.left;
+      this.xAxis[1] = yZero;
+      this.xAxis[2] = this.right;
+      this.xAxis[3] = yZero;
     } else {
       // set off screen if it is out of bounds
-      this.xAxis.setStartPos(-100, -100);
-      this.xAxis.setEndPos(-100, -100);
+      this.xAxis[0] = -100;
+      this.xAxis[1] = -100;
+      this.xAxis[2] = -100;
+      this.xAxis[3] = -100;
     }
 
     if (xZero >= this.left && xZero <= this.right) {
-      this.yAxis.setStartPos(xZero, this.top);
-      this.yAxis.setEndPos(xZero, this.bottom);
+      this.yAxis[0] = xZero;
+      this.yAxis[1] = this.top;
+      this.yAxis[2] = xZero;
+      this.yAxis[3] = this.bottom;
     } else {
       // set off screen if it is out of bounds
-      this.yAxis.setStartPos(-100, -100);
-      this.yAxis.setEndPos(-100, -100);
+      this.yAxis[0] = -100;
+      this.yAxis[1] = -100;
+      this.yAxis[2] = -100;
+      this.yAxis[3] = -100;
     }
 
     const topLeft = this.screenToGraph(this.left, this.top);
@@ -187,42 +183,56 @@ class ScatterPlot {
     this.screenPoints = [];
 
     this.plotPoints.forEach((pt) => {
-      const { x, y } = this.graphToScreen(pt.x, pt.y);
-      const newPoint = new Point(x, y, pt.thickness);
+      const { x, y } = this.graphToScreen(pt[0], pt[1]);
 
-      if (!this.inGraphBounds(newPoint)) return;
+      if (!this.inGraphBounds(x, y)) return;
 
-      this.screenPoints.push(newPoint);
+      this.screenPoints.push([x, y]);
     });
   }
 
-  private inGraphBounds(point: Point) {
+  private inGraphBounds(x: number, y: number) {
     return (
-      point.x >= this.left &&
-      point.x <= this.right &&
-      point.y >= this.top &&
-      point.y <= this.bottom
+      x >= this.left && x <= this.right && y >= this.top && y <= this.bottom
     );
   }
 
-  public addPoint(pt: Point) {
-    this.plotPoints.push(pt);
-    const { x, y } = this.graphToScreen(pt.x, pt.y);
-    const newPoint = new Point(x, y, pt.thickness);
-    if (!this.inGraphBounds(newPoint)) return;
-    this.screenPoints.push(newPoint);
+  public addPoint(x: number, y: number) {
+    this.plotPoints.push([x, y]);
+    const { x: newX, y: newY } = this.graphToScreen(x, y);
+    // const newPoint = new Point(n, y, pt.thickness);
+    if (!this.inGraphBounds(newX, newY)) return;
+    this.screenPoints.push([newX, newY]);
   }
 
-  public addPoints(points: Point[]) {
-    points.forEach((pt) => this.addPoint(pt));
+  public addPoints(points: [number, number][]) {
+    points.forEach((pt) => this.addPoint(pt[0], pt[1]));
   }
 
   public draw() {
     if (!this.gui.isOpen()) return;
     this.window.draw();
-    this.xAxis.draw();
-    this.yAxis.draw();
-    this.screenPoints.forEach((p) => p.draw());
+
+    GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+    GL11.glPointSize(3);
+    GL11.glColor4f(1, 1, 1, 1);
+    GL11.glBegin(GL11.GL_POINTS);
+    this.screenPoints.forEach((p) => {
+      GL11.glVertex2f(p[0], p[1]);
+    });
+    GL11.glEnd();
+
+    GL11.glLineWidth(1);
+    GL11.glColor4f(1, 0, 0, 1);
+    GL11.glBegin(GL11.GL_LINES);
+    GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
+    GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
+    GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
+    GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
+    GL11.glEnd();
+
+    GL11.glEnable(GL11.GL_TEXTURE_2D);
   }
 
   open() {

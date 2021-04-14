@@ -1,5 +1,4 @@
 /// <reference types="../../ctautocomplete/index" />
-import { Point } from "./customShapes";
 declare class ScatterPlot {
     width: number;
     height: number;
@@ -36,8 +35,8 @@ declare class ScatterPlot {
     private updateAxes;
     private updatePoints;
     private inGraphBounds;
-    addPoint(pt: Point): void;
-    addPoints(points: Point[]): void;
+    addPoint(x: number, y: number): void;
+    addPoints(points: [number, number][]): void;
     draw(): void;
     open(): void;
 }
