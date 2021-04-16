@@ -1,5 +1,6 @@
 import * as Elementa from "../../Elementa/index";
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
+const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 class ScatterPlot {
     constructor(width, height, backgroundColor) {
         this.width = width;
@@ -45,6 +46,8 @@ class ScatterPlot {
             this.graphToScreen(0, this.yMin).x,
             this.bottom
         ];
+        this.changed = true;
+        this.pointList = undefined;
         // @ts-ignore
         this.window = new Elementa.Window().addChild(this.background);
         this.gui.registerScrolled((mx, my, dir) => {
@@ -125,20 +128,13 @@ class ScatterPlot {
         this.screenPoints = [];
         this.plotPoints.forEach((pt) => {
             const { x, y } = this.graphToScreen(pt[0], pt[1]);
-            if (!this.inGraphBounds(x, y))
-                return;
             this.screenPoints.push([x, y]);
         });
-    }
-    inGraphBounds(x, y) {
-        return (x >= this.left && x <= this.right && y >= this.top && y <= this.bottom);
+        this.changed = true;
     }
     addPoint(x, y) {
         this.plotPoints.push([x, y]);
         const { x: newX, y: newY } = this.graphToScreen(x, y);
-        // const newPoint = new Point(n, y, pt.thickness);
-        if (!this.inGraphBounds(newX, newY))
-            return;
         this.screenPoints.push([newX, newY]);
     }
     addPoints(points) {
@@ -148,26 +144,42 @@ class ScatterPlot {
         if (!this.gui.isOpen())
             return;
         this.window.draw();
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glPointSize(3);
-        GL11.glColor4f(1, 1, 1, 1);
-        GL11.glBegin(GL11.GL_POINTS);
-        this.screenPoints.forEach((p) => {
-            GL11.glVertex2f(p[0], p[1]);
-        });
-        GL11.glEnd();
-        GL11.glLineWidth(1);
-        GL11.glColor4f(1, 0, 0, 1);
-        GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
-        GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
-        GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
-        GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
-        GL11.glEnd();
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        if (this.changed) {
+            if (!this.pointList) {
+                this.pointList = GL11.glGenLists(1);
+            }
+            GL11.glNewList(this.pointList, GL11.GL_COMPILE);
+            GL11.glDisable(GL11.GL_TEXTURE_2D);
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            const sr = new ScaledResolution(Client.getMinecraft());
+            const scaleFactor = sr.func_78325_e(); // getScaleFactor
+            GL11.glScissor(this.left * scaleFactor, this.top * scaleFactor, this.width * scaleFactor, this.height * scaleFactor);
+            GL11.glLineWidth(1);
+            GL11.glColor4f(1, 1, 1, 1);
+            GL11.glBegin(GL11.GL_LINE_STRIP);
+            this.screenPoints.forEach((p) => {
+                GL11.glVertex2f(p[0], p[1]);
+            });
+            GL11.glEnd();
+            GL11.glLineWidth(1);
+            GL11.glColor4f(1, 0, 0, 1);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
+            GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
+            GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
+            GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
+            GL11.glEnd();
+            GL11.glDisable(GL11.GL_SCISSOR_TEST);
+            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GL11.glEndList();
+            this.changed = false;
+        }
+        GL11.glCallList(this.pointList);
     }
     open() {
         this.gui.open();
     }
 }
 export { ScatterPlot };
+// use glScale, not scroll
+// use glScissor so no jumping points

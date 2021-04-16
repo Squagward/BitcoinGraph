@@ -25,6 +25,8 @@ declare class ScatterPlot {
     offsetY: number;
     private xAxis;
     private yAxis;
+    private changed;
+    private pointList?;
     private readonly screenWidth;
     private readonly screenHeight;
     private readonly screenCenterX;
@@ -34,7 +36,6 @@ declare class ScatterPlot {
     private screenToGraph;
     private updateAxes;
     private updatePoints;
-    private inGraphBounds;
     addPoint(x: number, y: number): void;
     addPoints(points: [number, number][]): void;
     draw(): void;
