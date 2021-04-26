@@ -7,7 +7,8 @@ const linearRegression = (data) => {
     const SUM_XY = data.reduce((a, b) => a + b[0] * b[1], 0);
     const AVG_X = data.reduce((a, b) => a + b[0], 0) / N;
     const AVG_Y = data.reduce((a, b) => a + b[1], 0) / N;
-    const b = (N * SUM_XY - SUM_X * SUM_Y) / (N * SUM_X2 - Math.pow(SUM_X, 2));
+    const b = (N * SUM_XY - SUM_X * SUM_Y) /
+        (N * SUM_X2 - Math.pow(SUM_X, 2));
     const a = AVG_Y - b * AVG_X;
     const R = (N * SUM_XY - SUM_X * SUM_Y) /
         Math.sqrt((N * SUM_X2 - Math.pow(SUM_X, 2)) * (N * SUM_Y2 - Math.pow(SUM_Y, 2)));
@@ -30,12 +31,11 @@ const quadraticRegression = (data) => {
     const SUM_X2Y = data.reduce((a, b) => a + Math.pow(b[0], 2) * b[1], 0) - (SUM_X2 * SUM_Y) / N;
     const SUM_X2X2 = SUM_X4 - Math.pow(SUM_X2, 2) / N;
     let a = (SUM_X2Y * SUM_XX - SUM_XY * SUM_XX2) / (SUM_XX * SUM_X2X2 - Math.pow(SUM_XX2, 2));
-    let b = (SUM_XY * SUM_X2X2 - SUM_X2Y * SUM_XX2) /
-        (SUM_XX * SUM_X2X2 - Math.pow(SUM_XX2, 2));
+    let b = (SUM_XY * SUM_X2X2 - SUM_X2Y * SUM_XX2) / (SUM_XX * SUM_X2X2 - Math.pow(SUM_XX2, 2));
     let c = SUM_Y / N - (b * SUM_X) / N - (a * SUM_X2) / N;
-    a = Math.round(a * 1000) / 1000;
-    b = Math.round(b * 1000) / 1000;
-    c = Math.round(c * 1000) / 1000;
+    // a = Math.round(a * 1000) / 1000;
+    // b = Math.round(b * 1000) / 1000;
+    // c = Math.round(c * 1000) / 1000;
     return { a, b, c };
 };
 export { linearRegression, quadraticRegression };

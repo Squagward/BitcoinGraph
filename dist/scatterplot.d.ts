@@ -3,7 +3,7 @@ declare class ScatterPlot {
     width: number;
     height: number;
     backgroundColor: JavaTColor;
-    gui: Gui;
+    private gui;
     left: number;
     right: number;
     top: number;
@@ -32,6 +32,8 @@ declare class ScatterPlot {
     private readonly screenCenterX;
     private readonly screenCenterY;
     constructor(width: number, height: number, backgroundColor: JavaTColor);
+    private fixupRanges;
+    private updateRanges;
     private graphToScreen;
     private screenToGraph;
     private updateAxes;

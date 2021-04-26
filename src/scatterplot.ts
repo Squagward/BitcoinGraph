@@ -3,7 +3,7 @@ const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
 class ScatterPlot {
-  gui: Gui;
+  private gui: Gui;
 
   left: number;
   right: number;
@@ -64,8 +64,8 @@ class ScatterPlot {
     this.background = new Elementa.UIBlock(this.backgroundColor)
       .setWidth(new Elementa.PixelConstraint(this.width))
       .setHeight(new Elementa.PixelConstraint(this.height))
-      .setX(new Elementa.PixelConstraint(this.left))
-      .setY(new Elementa.PixelConstraint(this.top));
+      .setX(new Elementa.CenterConstraint())
+      .setY(new Elementa.CenterConstraint());
 
     // starting dimensions
     this.xMin = -10;
@@ -80,18 +80,10 @@ class ScatterPlot {
     this.offsetX = -this.screenCenterX;
     this.offsetY = -this.screenCenterY;
 
-    this.xAxis = [
-      this.left,
-      this.graphToScreen(this.xMin, 0).y,
-      this.right,
-      this.graphToScreen(this.xMax, 0).y
-    ];
-    this.yAxis = [
-      this.graphToScreen(0, this.yMax).x,
-      this.top,
-      this.graphToScreen(0, this.yMin).x,
-      this.bottom
-    ];
+    const { x: xZero, y: yZero } = this.graphToScreen(0, 0);
+
+    this.xAxis = [this.left, yZero, this.right, yZero];
+    this.yAxis = [xZero, this.top, xZero, this.bottom];
 
     this.changed = true;
     this.pointList = undefined;
@@ -101,6 +93,7 @@ class ScatterPlot {
 
     this.gui.registerScrolled((mx, my, dir) => {
       const { x: mxPlotBefore, y: myPlotBefore } = this.screenToGraph(mx, my);
+
       switch (dir) {
         case -1:
           // zooming out
@@ -118,6 +111,7 @@ class ScatterPlot {
 
       this.updateAxes();
       this.updatePoints();
+      this.updateRanges();
     });
 
     register("dragged", (dx, dy, mx, my, btn) => {
@@ -127,63 +121,45 @@ class ScatterPlot {
 
       this.updateAxes();
       this.updatePoints();
+      this.updateRanges();
     });
+  }
+
+  private fixupRanges(x: number, y: number) {
+    const outX = (x + this.offsetX * this.zoom) / (this.zoom + this.scaleX * this.zoom);
+    const outY = (this.screenHeight - y + this.offsetY * this.zoom) / (this.zoom + this.scaleY * this.zoom);
+    return { x: outX, y: outY };
+  }
+
+  private updateRanges() {
+    const topLeft = this.fixupRanges(this.left, this.top);
+    const bottomRight = this.fixupRanges(this.right, this.bottom);
+
+    this.xMin = topLeft.x / this.zoom;
+    this.xMax = bottomRight.x / this.zoom;
+
+    this.yMin = bottomRight.y / this.zoom;
+    this.yMax = topLeft.y / this.zoom;
   }
 
   private graphToScreen(x: number, y: number) {
     const outX = (x - this.offsetX) * this.zoom + this.scaleX * this.zoom * x;
-    const outY =
-      this.screenHeight -
-      ((y - this.offsetY) * this.zoom + this.scaleY * this.zoom * y);
+    const outY = this.screenHeight - ((y - this.offsetY) * this.zoom + this.scaleY * this.zoom * y);
 
     return { x: outX, y: outY };
   }
 
   private screenToGraph(x: number, y: number) {
     const outX = (x - this.scaleX * this.zoom * x) / this.zoom + this.offsetX;
-    const outY =
-      (this.screenHeight - y - this.scaleY * this.zoom * y) / this.zoom +
-      this.offsetY;
+    const outY = (this.screenHeight - y - this.scaleY * this.zoom * y) / this.zoom + this.offsetY;
     return { x: outX, y: outY };
   }
 
   private updateAxes() {
-    let { x: xZero, y: yZero } = this.graphToScreen(0, 0);
+    const { x: xZero, y: yZero } = this.graphToScreen(0, 0);
 
-    if (yZero <= this.bottom && yZero >= this.top) {
-      this.xAxis[0] = this.left;
-      this.xAxis[1] = yZero;
-      this.xAxis[2] = this.right;
-      this.xAxis[3] = yZero;
-    } else {
-      // set off screen if it is out of bounds
-      this.xAxis[0] = -100;
-      this.xAxis[1] = -100;
-      this.xAxis[2] = -100;
-      this.xAxis[3] = -100;
-    }
-
-    if (xZero >= this.left && xZero <= this.right) {
-      this.yAxis[0] = xZero;
-      this.yAxis[1] = this.top;
-      this.yAxis[2] = xZero;
-      this.yAxis[3] = this.bottom;
-    } else {
-      // set off screen if it is out of bounds
-      this.yAxis[0] = -100;
-      this.yAxis[1] = -100;
-      this.yAxis[2] = -100;
-      this.yAxis[3] = -100;
-    }
-
-    const topLeft = this.screenToGraph(this.left, this.top);
-    const bottomRight = this.screenToGraph(this.right, this.bottom);
-
-    this.xMin = topLeft.x / this.zoom;
-    this.yMin = topLeft.y / this.zoom;
-
-    this.xMax = bottomRight.x / this.zoom;
-    this.yMax = bottomRight.y / this.zoom;
+    this.xAxis = [this.left, yZero, this.right, yZero];
+    this.yAxis = [xZero, this.top, xZero, this.bottom];
   }
 
   private updatePoints() {
@@ -230,7 +206,7 @@ class ScatterPlot {
       );
 
       GL11.glLineWidth(1);
-      GL11.glColor4f(1, 1, 1, 1);
+      GL11.glColor3f(1, 1, 1);
       GL11.glBegin(GL11.GL_LINE_STRIP);
       this.screenPoints.forEach((p) => {
         GL11.glVertex2f(p[0], p[1]);
@@ -238,7 +214,7 @@ class ScatterPlot {
       GL11.glEnd();
 
       GL11.glLineWidth(1);
-      GL11.glColor4f(1, 0, 0, 1);
+      GL11.glColor3f(1, 0, 0);
       GL11.glBegin(GL11.GL_LINES);
       GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
       GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
@@ -254,6 +230,7 @@ class ScatterPlot {
       this.changed = false;
     }
     GL11.glCallList(this.pointList);
+    // console.log(this.xMin, this.xMax, this.yMin, this.yMax);
   }
 
   open() {
@@ -262,4 +239,3 @@ class ScatterPlot {
 }
 export { ScatterPlot };
 
-// use glScale, not scroll
