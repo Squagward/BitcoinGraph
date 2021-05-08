@@ -1,37 +1,44 @@
+/// <reference types="../../CTAutocomplete/index" />
+/// <reference lib="es2015" />
+
 import * as Elementa from "../../Elementa/index";
+
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
-class ScatterPlot {
+type Point = [number, number];
+type Axis = [number, number, number, number];
+
+export class ScatterPlot {
   private gui: Gui;
 
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+  private left: number;
+  private right: number;
+  private top: number;
+  private bottom: number;
 
   /** Graph coordinates */
-  private plotPoints: [number, number][];
+  private plotPoints: Point[];
   /** Screen coordinates */
-  private screenPoints: [number, number][];
+  private screenPoints: Point[];
 
   private background: Elementa.UIBlock;
   private window: Elementa.Window;
 
-  xMin: number;
-  xMax: number;
-  yMin: number;
-  yMax: number;
+  private xMin: number;
+  private xMax: number;
+  private yMin: number;
+  private yMax: number;
 
-  zoom: number;
-  scaleX: number;
-  scaleY: number;
+  private zoom: number;
+  private scaleX: number;
+  private scaleY: number;
 
-  offsetX: number;
-  offsetY: number;
+  private offsetX: number;
+  private offsetY: number;
 
-  private xAxis: [number, number, number, number];
-  private yAxis: [number, number, number, number];
+  private xAxis: Axis;
+  private yAxis: Axis;
 
   private changed: boolean;
   private pointList?: number;
@@ -86,7 +93,6 @@ class ScatterPlot {
     this.yAxis = [xZero, this.top, xZero, this.bottom];
 
     this.changed = true;
-    this.pointList = undefined;
 
     // @ts-ignore
     this.window = new Elementa.Window().addChild(this.background);
@@ -178,7 +184,7 @@ class ScatterPlot {
     this.screenPoints.push([newX, newY]);
   }
 
-  public addPoints(points: [number, number][]) {
+  public addPoints(points: Point[]) {
     points.forEach((pt) => this.addPoint(pt[0], pt[1]));
   }
 
@@ -230,12 +236,9 @@ class ScatterPlot {
       this.changed = false;
     }
     GL11.glCallList(this.pointList);
-    // console.log(this.xMin, this.xMax, this.yMin, this.yMax);
   }
 
   open() {
     this.gui.open();
   }
 }
-export { ScatterPlot };
-

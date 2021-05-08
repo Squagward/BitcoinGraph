@@ -1,7 +1,9 @@
+/// <reference types="../../CTAutocomplete/index" />
+/// <reference lib="es2015" />
 import * as Elementa from "../../Elementa/index";
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
-class ScatterPlot {
+export class ScatterPlot {
     constructor(width, height, backgroundColor) {
         this.width = width;
         this.height = height;
@@ -38,7 +40,6 @@ class ScatterPlot {
         this.xAxis = [this.left, yZero, this.right, yZero];
         this.yAxis = [xZero, this.top, xZero, this.bottom];
         this.changed = true;
-        this.pointList = undefined;
         // @ts-ignore
         this.window = new Elementa.Window().addChild(this.background);
         this.gui.registerScrolled((mx, my, dir) => {
@@ -149,10 +150,8 @@ class ScatterPlot {
             this.changed = false;
         }
         GL11.glCallList(this.pointList);
-        // console.log(this.xMin, this.xMax, this.yMin, this.yMax);
     }
     open() {
         this.gui.open();
     }
 }
-export { ScatterPlot };
