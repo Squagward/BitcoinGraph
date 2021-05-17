@@ -3,7 +3,12 @@
 export * from "./dist";
 import Settings from "./dist/settings";
 
-const CTSettings = Java.type("com.chattriggers.ctjs.minecraft.wrappers.Settings");
+const CTSettings = Java.type(
+  "com.chattriggers.ctjs.minecraft.wrappers.Settings"
+);
+const SettingsGui = Java.type(
+  "com.chattriggers.sk1er.vigilance.gui.SettingsGui"
+);
 
 const prevScale = CTSettings.video.getGuiScale();
 register("command", () => {
@@ -15,15 +20,13 @@ const guis = [null, Client.currentGui.get()];
 register("guiOpened", (e) => {
   guis[0] = guis[1];
   guis[1] = Client.currentGui.get();
-  if (!guis[1] && guis[0] instanceof com.chattriggers.sk1er.vigilance.gui.SettingsGui) {
+  if (!guis[1] && guis[0] instanceof SettingsGui) {
     CTSettings.video.setGuiScale(prevScale);
   }
 });
 
 // TODO LIST
-// high priority
-// 1. lines with x following cursor and y following appropriate price
-
+// 1. date & price tracker @ mouse coords
 
 // low priority right now
 // 2. start working on the settings system

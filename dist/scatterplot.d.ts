@@ -1,6 +1,10 @@
 /// <reference types="../../ctautocomplete/index" />
 /// <reference lib="es2015" />
-declare type Point = [number, number];
+declare type Point = {
+    date: string;
+    index: number;
+    val: number;
+};
 export declare class ScatterPlot {
     width: number;
     height: number;
@@ -19,20 +23,28 @@ export declare class ScatterPlot {
     private offsetY;
     private xAxis;
     private yAxis;
-    private changed;
+    private changedPos;
+    private changedMouse;
     private pointList?;
+    private lineList?;
+    private mousePos;
     private screenWidth;
     private screenHeight;
     private screenCenterX;
     private screenCenterY;
+    private totalDays;
+    private maxPrice;
     constructor(width: number, height: number, backgroundColor: JavaTColor);
-    private findBounds;
     private addPointsToScreen;
     addPlotPoints(points: Point[]): void;
-    draw(): void;
+    private priceToPoint;
+    private constrainMouseX;
+    private closestPointToMouse;
     private shadeGraphBackground;
+    private drawIntersectLines;
     private drawPoints;
     private drawAxes;
+    draw(): void;
     open(): void;
 }
 export {};

@@ -2,13 +2,12 @@
 /// <reference lib="es2015" />
 
 import * as Elementa from "../../Elementa/index";
-import { dist } from "./utils";
+import { distSquared, findBounds } from "./utils";
 
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
-const MouseInfo = Java.type("java.awt.MouseInfo");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
-type Point = [number, number];
+type Point = { date: string; index: number; val: number };
 type Axis = [number, number, number, number];
 
 export class ScatterPlot {
@@ -33,15 +32,22 @@ export class ScatterPlot {
   private xAxis: Axis;
   private yAxis: Axis;
 
-  private changed: boolean;
+  private changedPos: boolean;
+  private changedMouse: boolean;
 
   private pointList?: number;
+  private lineList?: number;
+
+  private mousePos: [number, number];
 
   private screenWidth = Renderer.screen.getWidth();
   private screenHeight = Renderer.screen.getHeight();
 
   private screenCenterX = this.screenWidth / 2;
   private screenCenterY = this.screenHeight / 2;
+
+  private totalDays: number;
+  private maxPrice: number;
 
   constructor(
     public width: number,
@@ -78,21 +84,35 @@ export class ScatterPlot {
     this.xAxis = [this.left, this.bottom, this.right, this.bottom];
     this.yAxis = [this.left, this.top, this.left, this.bottom];
 
-    this.changed = true;
+    this.changedPos = true;
+    this.changedMouse = true;
+
+    this.mousePos = [-1, -1];
+
+    this.totalDays = 0;
+    this.maxPrice = 0;
 
     this.gui.registerScrolled((mx, my, dir) => {
       this.offsetX -= mx;
       this.offsetY -= my;
-      const delta = dir > 0
-        ? 1.25
-        : 0.8;
+
+      const delta = dir > 0 ? 1.25 : 0.8;
       this.zoom *= delta;
+
       this.offsetX *= delta;
       this.offsetY *= delta;
+
       this.offsetX += mx;
       this.offsetY += my;
 
-      this.changed = true;
+      this.changedPos = true;
+    });
+
+    this.gui.registerDraw((mx, my, pt) => {
+      this.mousePos[0] = this.mousePos[1];
+      this.mousePos[1] = mx;
+
+      if (this.mousePos[0] !== this.mousePos[1]) this.changedMouse = true;
     });
 
     register("dragged", (dx, dy, mx, my, btn) => {
@@ -100,49 +120,133 @@ export class ScatterPlot {
       this.offsetX += dx;
       this.offsetY += dy;
 
-      this.changed = true;
+      this.changedPos = true;
     });
   }
 
-  private findBounds() {
-    const xMax = this.plotPoints.length;
-    const yMax = Math.max(...this.plotPoints.map(p => p[1]));
-    return { xMax, yMax };
-  }
-
   private addPointsToScreen() {
-    const { xMax, yMax } = this.findBounds();
-
     this.plotPoints.forEach((p) => {
-      const percentX = p[0] / xMax;
-      const percentY = p[1] / yMax;
+      const percentX = p.index / this.totalDays;
+      const percentY = p.val / this.maxPrice;
 
-      this.screenPoints.push([percentX * this.width + this.left, this.bottom - (percentY * this.height)]);
+      this.screenPoints.push({
+        date: p.date,
+        index: percentX * this.width + this.left,
+        val: this.bottom - percentY * this.height
+      });
     });
   }
 
   public addPlotPoints(points: Point[]) {
     this.plotPoints.push(...points);
+    const { xMax, yMax } = findBounds(this.plotPoints);
+    this.totalDays = xMax;
+    this.maxPrice = yMax;
+
     this.addPointsToScreen();
   }
 
-  /* private findClosestIndex(x: number, y: number) {
-    let closestDist = Number.MAX_SAFE_INTEGER;
+  private priceToPoint(index: number, price: number) {
+    const percentX = this.left + (index / this.plotPoints.length) * this.width;
+    const percentY = this.bottom - (price / this.maxPrice) * this.height;
+    return { x: percentX, y: percentY };
+  }
+
+  private constrainMouseX() {
+    return MathLib.clampFloat(
+      (Client.getMouseX() - this.offsetX) / this.zoom,
+      this.left,
+      this.right
+    );
+  }
+
+  private closestPointToMouse() {
+    let currentDistance = Number.MAX_VALUE;
     let closestIndex = -1;
+
     for (let i = 0; i < this.screenPoints.length; i++) {
-      const distance = dist(x, y, this.screenPoints[i][0], this.screenPoints[i][1]);
-      if (distance < closestDist) {
-        closestDist = distance;
+      let loc = this.priceToPoint(i, this.screenPoints[i].val);
+
+      if (distSquared(this.constrainMouseX(), 0, loc.x, 0) < currentDistance) {
+        currentDistance = distSquared(this.constrainMouseX(), 0, loc.x, 0);
         closestIndex = i;
       }
     }
-    return closestIndex;
-  } */
+    const screenCoordPoint = this.priceToPoint(
+      closestIndex,
+      this.plotPoints[closestIndex].val
+    );
+    return { index: closestIndex, val: screenCoordPoint.y };
+  }
+
+  private shadeGraphBackground() {
+    GL11.glPushMatrix();
+    GL11.glTranslated(this.offsetX, this.offsetY, 0);
+    GL11.glScaled(this.zoom, this.zoom, this.zoom);
+
+    GL11.glColor3f(0.7, 0.7, 0.7);
+    GL11.glBegin(GL11.GL_QUADS);
+    GL11.glVertex2f(this.left, this.top);
+    GL11.glVertex2f(this.left, this.bottom);
+    GL11.glVertex2f(this.right, this.bottom);
+    GL11.glVertex2f(this.right, this.top);
+    GL11.glEnd();
+    GL11.glPopMatrix();
+  }
+
+  private drawIntersectLines() {
+    if (!this.screenPoints.length) return;
+    const { index, val } = this.closestPointToMouse();
+
+    GL11.glPushMatrix();
+    GL11.glLineWidth(1);
+    GL11.glTranslated(this.offsetX, this.offsetY, 0);
+    GL11.glScaled(this.zoom, this.zoom, this.zoom);
+
+    GL11.glColor3f(0, 0, 1);
+    GL11.glBegin(GL11.GL_LINES);
+    GL11.glVertex2f(this.left, val);
+    GL11.glVertex2f(this.right, val);
+    GL11.glVertex2f(this.constrainMouseX(), this.top);
+    GL11.glVertex2f(this.constrainMouseX(), this.bottom);
+    GL11.glEnd();
+    GL11.glPopMatrix();
+  }
+
+  private drawPoints() {
+    GL11.glPushMatrix();
+    GL11.glLineWidth(1);
+    GL11.glTranslated(this.offsetX, this.offsetY, 0);
+    GL11.glScaled(this.zoom, this.zoom, this.zoom);
+
+    GL11.glColor3f(0, 0, 0);
+    GL11.glBegin(GL11.GL_LINE_STRIP);
+    this.screenPoints.forEach((p) => GL11.glVertex2f(p.index, p.val));
+    GL11.glEnd();
+    GL11.glPopMatrix();
+  }
+
+  private drawAxes() {
+    GL11.glPushMatrix();
+    GL11.glLineWidth(1);
+    GL11.glTranslated(this.offsetX, this.offsetY, 0);
+    GL11.glScaled(this.zoom, this.zoom, this.zoom);
+
+    GL11.glColor3f(1, 0, 0);
+    GL11.glBegin(GL11.GL_LINES);
+    GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
+    GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
+    GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
+    GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
+    GL11.glEnd();
+    GL11.glPopMatrix();
+  }
 
   public draw() {
     if (!this.gui.isOpen()) return;
     this.window.draw();
-    if (this.changed) {
+
+    if (this.changedPos) {
       if (!this.pointList) {
         this.pointList = GL11.glGenLists(1);
       }
@@ -171,91 +275,41 @@ export class ScatterPlot {
 
       GL11.glEndList();
 
-      this.changed = false;
+      this.changedPos = false;
+    }
+
+    if (this.changedMouse) {
+      if (!this.lineList) {
+        this.lineList = GL11.glGenLists(1);
+      }
+
+      GL11.glNewList(this.lineList, GL11.GL_COMPILE);
+
+      const sr = new ScaledResolution(Client.getMinecraft());
+      const scaleFactor = sr.func_78325_e(); // getScaleFactor
+
+      GL11.glScissor(
+        this.left * scaleFactor,
+        this.top * scaleFactor,
+        this.width * scaleFactor,
+        this.height * scaleFactor
+      );
+
+      GL11.glDisable(GL11.GL_TEXTURE_2D);
+      GL11.glEnable(GL11.GL_SCISSOR_TEST);
+
+      this.drawIntersectLines();
+
+      GL11.glDisable(GL11.GL_SCISSOR_TEST);
+      GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+      GL11.glEndList();
+
+      this.changedMouse = false;
     }
 
     GL11.glCallList(this.pointList);
-
-    // GL11.glDisable(GL11.GL_TEXTURE_2D);
-    // GL11.glEnable(GL11.GL_SCISSOR_TEST);
-
-    // const sr = new ScaledResolution(Client.getMinecraft());
-    // const scaleFactor = sr.func_78325_e(); // getScaleFactor
-
-    // GL11.glScissor(
-    //   this.left * scaleFactor,
-    //   this.top * scaleFactor,
-    //   this.width * scaleFactor,
-    //   this.height * scaleFactor
-    // );
-
-    // this.drawIntersectLines();
-
-    // GL11.glDisable(GL11.GL_SCISSOR_TEST);
-    // GL11.glEnable(GL11.GL_TEXTURE_2D);
-  }
-
-  private shadeGraphBackground() {
-    GL11.glPushMatrix();
-    GL11.glTranslated(this.offsetX, this.offsetY, 0);
-    GL11.glScaled(this.zoom, this.zoom, this.zoom);
-
-    GL11.glColor3f(0.7, 0.7, 0.7);
-    GL11.glBegin(GL11.GL_QUADS);
-    GL11.glVertex2f(this.left, this.top);
-    GL11.glVertex2f(this.left, this.bottom);
-    GL11.glVertex2f(this.right, this.bottom);
-    GL11.glVertex2f(this.right, this.top);
-    GL11.glEnd();
-    GL11.glPopMatrix();
-  }
-
-  /* private drawIntersectLines() {
-    if (!this.screenPoints.length) return;
-    const index = this.findClosestIndex(Client.getMouseX(), Client.getMouseY());
-
-    GL11.glPushMatrix();
-    GL11.glLineWidth(1);
-    GL11.glTranslated(this.offsetX, this.offsetY, 0);
-    GL11.glScaled(this.zoom, this.zoom, this.zoom);
-
-    GL11.glColor3f(0, 0, 1);
-    GL11.glBegin(GL11.GL_LINES);
-    GL11.glVertex2f(this.left, this.screenPoints[index][1]);
-    GL11.glVertex2f(this.right, this.screenPoints[index][1]);
-    GL11.glVertex2f(Client.getMouseX() - this.offsetX, this.top);
-    GL11.glVertex2f(Client.getMouseX() - this.offsetX, this.bottom);
-    GL11.glEnd();
-    GL11.glPopMatrix();
-  } */
-
-  private drawPoints() {
-    GL11.glPushMatrix();
-    GL11.glLineWidth(1);
-    GL11.glTranslated(this.offsetX, this.offsetY, 0);
-    GL11.glScaled(this.zoom, this.zoom, this.zoom);
-
-    GL11.glColor3f(0, 0, 0);
-    GL11.glBegin(GL11.GL_LINE_STRIP);
-    this.screenPoints.forEach((p) => GL11.glVertex2f(...p));
-    GL11.glEnd();
-    GL11.glPopMatrix();
-  }
-
-  private drawAxes() {
-    GL11.glPushMatrix();
-    GL11.glLineWidth(1);
-    GL11.glTranslated(this.offsetX, this.offsetY, 0);
-    GL11.glScaled(this.zoom, this.zoom, this.zoom);
-
-    GL11.glColor3f(1, 0, 0);
-    GL11.glBegin(GL11.GL_LINES);
-    GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
-    GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
-    GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
-    GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
-    GL11.glEnd();
-    GL11.glPopMatrix();
+    GL11.glCallList(this.lineList);
   }
 
   public open() {
