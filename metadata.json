@@ -3,6 +3,6 @@
   "creator": "Squagward",
   "version": "1.0.0",
   "entry": "index.js",
-  "requires": ["Elementa", "fparser"],
+  "requires": ["Elementa", "numeraljs"],
   "$schema": "../CTAutocomplete/schema.json"
 }

@@ -1,7 +1,5 @@
-/// <reference types="../../CTAutocomplete/index" />
-/// <reference lib="es2015" />
 import * as Elementa from "../../Elementa/index";
-import { distSquared, findBounds } from "./utils";
+import { distSquared, findBounds, addCommas } from "./utils";
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 export class ScatterPlot {
@@ -27,7 +25,6 @@ export class ScatterPlot {
             .setHeight(new Elementa.PixelConstraint(this.height))
             .setX(new Elementa.CenterConstraint())
             .setY(new Elementa.CenterConstraint());
-        // @ts-ignore
         this.window = new Elementa.Window().addChild(this.background);
         this.zoom = 1;
         this.offsetX = 0;
@@ -49,6 +46,7 @@ export class ScatterPlot {
             this.offsetX += mx;
             this.offsetY += my;
             this.changedPos = true;
+            this.changedMouse = true;
         });
         this.gui.registerDraw((mx, my, pt) => {
             this.mousePos[0] = this.mousePos[1];
@@ -62,17 +60,12 @@ export class ScatterPlot {
             this.offsetX += dx;
             this.offsetY += dy;
             this.changedPos = true;
+            this.changedMouse = true;
         });
     }
     addPointsToScreen() {
-        this.plotPoints.forEach((p) => {
-            const percentX = p.index / this.totalDays;
-            const percentY = p.val / this.maxPrice;
-            this.screenPoints.push({
-                date: p.date,
-                index: percentX * this.width + this.left,
-                val: this.bottom - percentY * this.height
-            });
+        this.plotPoints.forEach(([, price], i) => {
+            this.screenPoints.push(this.priceToPoint(i, price));
         });
     }
     addPlotPoints(points) {
@@ -83,7 +76,7 @@ export class ScatterPlot {
         this.addPointsToScreen();
     }
     priceToPoint(index, price) {
-        const percentX = this.left + (index / this.plotPoints.length) * this.width;
+        const percentX = this.left + (index / this.totalDays) * this.width;
         const percentY = this.bottom - (price / this.maxPrice) * this.height;
         return { x: percentX, y: percentY };
     }
@@ -94,14 +87,16 @@ export class ScatterPlot {
         let currentDistance = Number.MAX_VALUE;
         let closestIndex = -1;
         for (let i = 0; i < this.screenPoints.length; i++) {
-            let loc = this.priceToPoint(i, this.screenPoints[i].val);
+            let loc = this.priceToPoint(i, this.plotPoints[i][1]);
             if (distSquared(this.constrainMouseX(), 0, loc.x, 0) < currentDistance) {
                 currentDistance = distSquared(this.constrainMouseX(), 0, loc.x, 0);
                 closestIndex = i;
             }
         }
-        const screenCoordPoint = this.priceToPoint(closestIndex, this.plotPoints[closestIndex].val);
-        return { index: closestIndex, val: screenCoordPoint.y };
+        return {
+            pt: this.priceToPoint(closestIndex, this.plotPoints[closestIndex][1]),
+            index: closestIndex
+        };
     }
     shadeGraphBackground() {
         GL11.glPushMatrix();
@@ -109,27 +104,27 @@ export class ScatterPlot {
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
         GL11.glColor3f(0.7, 0.7, 0.7);
         GL11.glBegin(GL11.GL_QUADS);
-        GL11.glVertex2f(this.left, this.top);
-        GL11.glVertex2f(this.left, this.bottom);
-        GL11.glVertex2f(this.right, this.bottom);
-        GL11.glVertex2f(this.right, this.top);
+        GL11.glVertex2d(this.left, this.top);
+        GL11.glVertex2d(this.left, this.bottom);
+        GL11.glVertex2d(this.right, this.bottom);
+        GL11.glVertex2d(this.right, this.top);
         GL11.glEnd();
         GL11.glPopMatrix();
     }
     drawIntersectLines() {
         if (!this.screenPoints.length)
             return;
-        const { index, val } = this.closestPointToMouse();
+        const { pt: { x, y } } = this.closestPointToMouse();
         GL11.glPushMatrix();
         GL11.glLineWidth(1);
         GL11.glTranslated(this.offsetX, this.offsetY, 0);
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
         GL11.glColor3f(0, 0, 1);
         GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(this.left, val);
-        GL11.glVertex2f(this.right, val);
-        GL11.glVertex2f(this.constrainMouseX(), this.top);
-        GL11.glVertex2f(this.constrainMouseX(), this.bottom);
+        GL11.glVertex2d(this.left, y);
+        GL11.glVertex2d(this.right, y);
+        GL11.glVertex2d(x, this.top);
+        GL11.glVertex2d(x, this.bottom);
         GL11.glEnd();
         GL11.glPopMatrix();
     }
@@ -140,21 +135,21 @@ export class ScatterPlot {
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
         GL11.glColor3f(0, 0, 0);
         GL11.glBegin(GL11.GL_LINE_STRIP);
-        this.screenPoints.forEach((p) => GL11.glVertex2f(p.index, p.val));
+        this.screenPoints.forEach((p) => GL11.glVertex2d(p.x, p.y));
         GL11.glEnd();
         GL11.glPopMatrix();
     }
     drawAxes() {
         GL11.glPushMatrix();
-        GL11.glLineWidth(1);
         GL11.glTranslated(this.offsetX, this.offsetY, 0);
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
+        GL11.glLineWidth(1);
         GL11.glColor3f(1, 0, 0);
         GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2f(this.xAxis[0], this.xAxis[1]);
-        GL11.glVertex2f(this.xAxis[2], this.xAxis[3]);
-        GL11.glVertex2f(this.yAxis[0], this.yAxis[1]);
-        GL11.glVertex2f(this.yAxis[2], this.yAxis[3]);
+        GL11.glVertex2d(this.xAxis[0], this.xAxis[1]);
+        GL11.glVertex2d(this.xAxis[2], this.xAxis[3]);
+        GL11.glVertex2d(this.yAxis[0], this.yAxis[1]);
+        GL11.glVertex2d(this.yAxis[2], this.yAxis[3]);
         GL11.glEnd();
         GL11.glPopMatrix();
     }
@@ -162,14 +157,16 @@ export class ScatterPlot {
         if (!this.gui.isOpen())
             return;
         this.window.draw();
+        const sr = new ScaledResolution(Client.getMinecraft());
+        const scaleFactor = sr.func_78325_e();
+        GL11.glScissor(this.left * scaleFactor, this.top * scaleFactor, this.width * scaleFactor, this.height * scaleFactor);
         if (this.changedPos) {
+            GL11.glDisable(GL11.GL_TEXTURE_2D);
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
             if (!this.pointList) {
                 this.pointList = GL11.glGenLists(1);
             }
             GL11.glNewList(this.pointList, GL11.GL_COMPILE);
-            const sr = new ScaledResolution(Client.getMinecraft());
-            const scaleFactor = sr.func_78325_e(); // getScaleFactor
-            GL11.glScissor(this.left * scaleFactor, this.top * scaleFactor, this.width * scaleFactor, this.height * scaleFactor);
             GL11.glDisable(GL11.GL_TEXTURE_2D);
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
             this.shadeGraphBackground();
@@ -185,9 +182,6 @@ export class ScatterPlot {
                 this.lineList = GL11.glGenLists(1);
             }
             GL11.glNewList(this.lineList, GL11.GL_COMPILE);
-            const sr = new ScaledResolution(Client.getMinecraft());
-            const scaleFactor = sr.func_78325_e(); // getScaleFactor
-            GL11.glScissor(this.left * scaleFactor, this.top * scaleFactor, this.width * scaleFactor, this.height * scaleFactor);
             GL11.glDisable(GL11.GL_TEXTURE_2D);
             GL11.glEnable(GL11.GL_SCISSOR_TEST);
             this.drawIntersectLines();
@@ -198,6 +192,19 @@ export class ScatterPlot {
         }
         GL11.glCallList(this.pointList);
         GL11.glCallList(this.lineList);
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        const { pt: { x }, index } = this.closestPointToMouse();
+        Renderer.translate(this.offsetX, this.offsetY);
+        Renderer.scale(this.zoom);
+        const price = new Text(addCommas(this.plotPoints[index][1])).setScale(MathLib.clampFloat(1 / this.zoom, 0, 2));
+        price.draw(this.left, this.screenCenterY - price.getHeight() / 2);
+        Renderer.translate(this.offsetX, this.offsetY);
+        Renderer.scale(this.zoom);
+        new Text(this.plotPoints[index][0])
+            .setScale(MathLib.clampFloat(1 / this.zoom, 0, 2))
+            .setAlign(DisplayHandler.Align.CENTER)
+            .draw(x, this.top);
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
     open() {
         this.gui.open();
