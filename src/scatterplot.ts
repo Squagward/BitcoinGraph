@@ -1,26 +1,25 @@
 /// <reference types="../../CTAutocomplete/index" />
 /// <reference lib="es2015" />
 
-import * as Elementa from "../../Elementa/index";
+import { Colors, Range } from "./constants";
 import { Axis, DataPoint, ScreenPoint } from "./types";
-import { distSquared, findBounds, addCommas } from "./utils";
+import { addCommas, distSquared, findBounds } from "./utils";
 
 const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
 export class ScatterPlot {
   private gui: Gui;
+  private display: Display;
 
   private left: number;
   private right: number;
   private top: number;
   private bottom: number;
 
-  private plotPoints: DataPoint[];
-  private screenPoints: ScreenPoint[];
-
-  private background: Elementa.UIBlock;
-  private window: Elementa.Window;
+  private totalPlotPoints: DataPoint[];
+  private currentPlotPoints: DataPoint[];
+  private currentScreenPoints: ScreenPoint[];
 
   private zoom: number;
 
@@ -33,16 +32,19 @@ export class ScatterPlot {
   private changedPos: boolean;
   private changedMouse: boolean;
 
+  private clicked: boolean;
+  private dragging: boolean;
+
   private pointList?: number;
   private lineList?: number;
 
   private mousePos: [number, number];
 
-  private screenWidth = Renderer.screen.getWidth();
-  private screenHeight = Renderer.screen.getHeight();
+  private readonly screenWidth = Renderer.screen.getWidth();
+  private readonly screenHeight = Renderer.screen.getHeight();
 
-  private screenCenterX = this.screenWidth / 2;
-  private screenCenterY = this.screenHeight / 2;
+  private readonly screenCenterX = this.screenWidth / 2;
+  private readonly screenCenterY = this.screenHeight / 2;
 
   private totalDays: number;
   private maxPrice: number;
@@ -50,12 +52,9 @@ export class ScatterPlot {
   constructor(
     private width: number,
     private height: number,
-    private backgroundColor: JavaTColor
+    private backgroundColor: number
   ) {
     this.gui = new Gui();
-
-    this.width = width;
-    this.height = height;
 
     this.left = this.screenCenterX - this.width / 2;
     this.right = this.screenCenterX + this.width / 2;
@@ -63,17 +62,16 @@ export class ScatterPlot {
     this.top = this.screenCenterY - this.height / 2;
     this.bottom = this.screenCenterY + this.height / 2;
 
-    this.plotPoints = [];
-    this.screenPoints = [];
+    this.display = new Display()
+      .setRenderLoc(this.left - 10, this.screenCenterY)
+      .setAlign(DisplayHandler.Align.RIGHT)
+      .setBackground(DisplayHandler.Background.FULL)
+      .setTextColor(Colors.TEXT)
+      .setBackgroundColor(Colors.TEXT_BACKGROUND);
 
-    this.background = new Elementa.UIBlock(this.backgroundColor)
-      .setWidth(new Elementa.PixelConstraint(this.width))
-      .setHeight(new Elementa.PixelConstraint(this.height))
-      .setX(new Elementa.CenterConstraint())
-      .setY(new Elementa.CenterConstraint());
-
-    // @ts-ignore
-    this.window = new Elementa.Window().addChild(this.background);
+    this.totalPlotPoints = [];
+    this.currentPlotPoints = [];
+    this.currentScreenPoints = [];
 
     this.zoom = 1;
     this.offsetX = 0;
@@ -84,6 +82,9 @@ export class ScatterPlot {
 
     this.changedPos = true;
     this.changedMouse = true;
+
+    this.clicked = false;
+    this.dragging = false;
 
     this.mousePos = [-1, -1];
 
@@ -107,11 +108,26 @@ export class ScatterPlot {
       this.changedMouse = true;
     });
 
-    this.gui.registerDraw((mx, my, pt) => {
-      this.mousePos[0] = this.mousePos[1];
-      this.mousePos[1] = mx;
+    this.gui.registerKeyTyped((typed, key) => {
+      if (key === Keyboard.KEY_R) {
+        this.resetTransforms();
+      }
+    });
 
-      if (this.mousePos[0] !== this.mousePos[1]) this.changedMouse = true;
+    register("step", (steps) => {
+      if (!this.gui.isOpen()) return;
+      this.mousePos[0] = this.mousePos[1];
+      this.mousePos[1] = Client.getMouseX();
+
+      if (this.mousePos[0] !== this.mousePos[1]) {
+        this.changedMouse = true;
+        this.drawLabels();
+      }
+    }).setFps(20);
+
+    register("clicked", (mx, my, btn, down) => {
+      this.clicked = down;
+      if (!down) this.dragging = false;
     });
 
     register("dragged", (dx, dy, mx, my, btn) => {
@@ -121,28 +137,44 @@ export class ScatterPlot {
 
       this.changedPos = true;
       this.changedMouse = true;
+      if (this.clicked) this.dragging = true;
     });
   }
 
+  private resetTransforms() {
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.zoom = 1;
+    this.changedPos = true;
+    this.changedMouse = true;
+  }
+
   private addPointsToScreen() {
-    this.plotPoints.forEach(([, price], i) => {
-      this.screenPoints.push(this.priceToPoint(i, price));
+    this.currentScreenPoints = [];
+
+    this.currentPlotPoints.forEach(([, price], i) => {
+      this.currentScreenPoints.push(this.priceToPoint(i, price));
     });
   }
 
   public addPlotPoints(points: DataPoint[]) {
-    this.plotPoints.push(...points);
-    const { xMax, yMax } = findBounds(this.plotPoints);
-    this.totalDays = xMax;
-    this.maxPrice = yMax;
+    this.totalPlotPoints = points;
+  }
 
-    this.addPointsToScreen();
+  public setGraphRange(type: string) {
+    if (type === "max" || !(type in Range)) {
+      this.currentPlotPoints = this.totalPlotPoints;
+    } else {
+      this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
+    }
+
+    this.resetTransforms();
   }
 
   private priceToPoint(index: number, price: number) {
-    const percentX = this.left + (index / this.totalDays) * this.width;
-    const percentY = this.bottom - (price / this.maxPrice) * this.height;
-    return { x: percentX, y: percentY };
+    const x = this.left + (index / this.totalDays) * this.width;
+    const y = this.bottom - (price / this.maxPrice) * this.height;
+    return { x, y };
   }
 
   private constrainMouseX() {
@@ -157,16 +189,19 @@ export class ScatterPlot {
     let currentDistance = Number.MAX_VALUE;
     let closestIndex = -1;
 
-    for (let i = 0; i < this.screenPoints.length; i++) {
-      let loc = this.priceToPoint(i, this.plotPoints[i][1]);
+    this.currentPlotPoints.forEach(([, price], i) => {
+      let loc = this.priceToPoint(i, price);
 
       if (distSquared(this.constrainMouseX(), 0, loc.x, 0) < currentDistance) {
         currentDistance = distSquared(this.constrainMouseX(), 0, loc.x, 0);
         closestIndex = i;
       }
-    }
+    });
     return {
-      pt: this.priceToPoint(closestIndex, this.plotPoints[closestIndex][1]),
+      pt: this.priceToPoint(
+        closestIndex,
+        this.currentPlotPoints[closestIndex][1]
+      ),
       index: closestIndex
     };
   }
@@ -176,7 +211,7 @@ export class ScatterPlot {
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
-    GL11.glColor3f(0.7, 0.7, 0.7);
+    GL11.glColor3d(...Colors.GRAPH_BACKGROUND);
     GL11.glBegin(GL11.GL_QUADS);
     GL11.glVertex2d(this.left, this.top);
     GL11.glVertex2d(this.left, this.bottom);
@@ -187,7 +222,7 @@ export class ScatterPlot {
   }
 
   private drawIntersectLines() {
-    if (!this.screenPoints.length) return;
+    if (!this.currentScreenPoints.length) return;
     const {
       pt: { x, y }
     } = this.closestPointToMouse();
@@ -197,7 +232,7 @@ export class ScatterPlot {
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
-    GL11.glColor3f(0, 0, 1);
+    GL11.glColor3d(...Colors.INTERSECT_LINES);
     GL11.glBegin(GL11.GL_LINES);
     GL11.glVertex2d(this.left, y);
     GL11.glVertex2d(this.right, y);
@@ -214,9 +249,9 @@ export class ScatterPlot {
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
-    GL11.glColor3f(0, 0, 0);
+    GL11.glColor3d(...Colors.POINTS);
     GL11.glBegin(GL11.GL_LINE_STRIP);
-    this.screenPoints.forEach((p) => GL11.glVertex2d(p.x, p.y));
+    this.currentScreenPoints.forEach((p) => GL11.glVertex2d(p.x, p.y));
     GL11.glEnd();
     GL11.glPopMatrix();
   }
@@ -227,7 +262,7 @@ export class ScatterPlot {
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
     GL11.glLineWidth(1);
-    GL11.glColor3f(1, 0, 0);
+    GL11.glColor3d(...Colors.AXES);
     GL11.glBegin(GL11.GL_LINES);
     GL11.glVertex2d(this.xAxis[0], this.xAxis[1]);
     GL11.glVertex2d(this.xAxis[2], this.xAxis[3]);
@@ -238,8 +273,14 @@ export class ScatterPlot {
   }
 
   public draw() {
-    if (!this.gui.isOpen()) return;
-    this.window.draw();
+    if (!this.gui.isOpen()) return this.display.clearLines();
+    Renderer.drawRect(
+      this.backgroundColor,
+      this.left,
+      this.top,
+      this.width,
+      this.height
+    );
 
     const sr = new ScaledResolution(Client.getMinecraft());
     const scaleFactor = sr.func_78325_e(); // getScaleFactor
@@ -252,9 +293,6 @@ export class ScatterPlot {
     );
 
     if (this.changedPos) {
-      GL11.glDisable(GL11.GL_TEXTURE_2D);
-      GL11.glEnable(GL11.GL_SCISSOR_TEST);
-
       if (!this.pointList) {
         this.pointList = GL11.glGenLists(1);
       }
@@ -298,33 +336,25 @@ export class ScatterPlot {
 
     GL11.glCallList(this.pointList);
     GL11.glCallList(this.lineList);
+  }
 
-    //TODO: make this less messy please
-    GL11.glEnable(GL11.GL_SCISSOR_TEST);
-
-    const {
-      pt: { x },
-      index
-    } = this.closestPointToMouse();
-
-    Renderer.translate(this.offsetX, this.offsetY);
-    Renderer.scale(this.zoom);
-    const price = new Text(addCommas(this.plotPoints[index][1])).setScale(
-      MathLib.clampFloat(1 / this.zoom, 0, 2)
-    );
-    price.draw(this.left, this.screenCenterY - price.getHeight() / 2);
-
-    Renderer.translate(this.offsetX, this.offsetY);
-    Renderer.scale(this.zoom);
-    new Text(this.plotPoints[index][0])
-      .setScale(MathLib.clampFloat(1 / this.zoom, 0, 2))
-      .setAlign(DisplayHandler.Align.CENTER)
-      .draw(x, this.top);
-
-    GL11.glDisable(GL11.GL_SCISSOR_TEST);
+  private drawLabels() {
+    if (this.dragging) return;
+    const { index } = this.closestPointToMouse();
+    this.display
+      .setLine(0, this.currentPlotPoints[index][0])
+      .setLine(1, addCommas(this.currentPlotPoints[index][1]));
   }
 
   public open() {
+    const { xMax, yMax } = findBounds(this.currentPlotPoints);
+    this.totalDays = xMax;
+    this.maxPrice = yMax;
+
+    this.addPointsToScreen();
+
+    this.changedPos = true;
+    this.changedMouse = true;
     this.gui.open();
   }
 }

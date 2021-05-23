@@ -4,3 +4,6 @@ export declare type ScreenPoint = {
     y: number;
 };
 export declare type Axis = [number, number, number, number];
+export declare type Map = {
+    [key: string]: number;
+};

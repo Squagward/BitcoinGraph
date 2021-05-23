@@ -7,7 +7,7 @@ export const distSquared = (x1: number, y1: number, x2: number, y2: number) => {
 };
 
 export const findBounds = (arr: DataPoint[]) => {
-  const xMax = arr.length;
+  const xMax = arr.length - 1;
   const yMax = Math.max(...arr.map(([, price]) => price));
   return { xMax, yMax };
 };

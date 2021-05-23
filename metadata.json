@@ -1,8 +1,10 @@
 {
-  "name": "Scatterplot",
+  "name": "BitcoinGraph",
   "creator": "Squagward",
   "version": "1.0.0",
   "entry": "index.js",
-  "requires": ["Elementa", "numeraljs"],
+  "description": "Shows historical Bitcoin price data provided by CoinDesk",
+  "helpMessage": "\n§9BitcoinGraph by Squagward\n/btc for more info!\n",
+  "requires": ["CustomTabCompletions", "numeraljs", "request"],
   "$schema": "../CTAutocomplete/schema.json"
 }
