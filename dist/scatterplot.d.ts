@@ -1,4 +1,3 @@
-/// <reference types="../../ctautocomplete/index" />
 /// <reference lib="es2015" />
 import { DataPoint } from "./types";
 export declare class ScatterPlot {
@@ -44,7 +43,7 @@ export declare class ScatterPlot {
     private drawIntersectLines;
     private drawPoints;
     private drawAxes;
-    draw(): Display | undefined;
+    draw(): void;
     private drawLabels;
     open(): void;
 }

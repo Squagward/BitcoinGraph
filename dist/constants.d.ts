@@ -1,5 +1,4 @@
-import { Map } from "./types";
-export declare const Range: Map;
+export declare const Range: Record<string, number>;
 export declare const Colors: {
     TEXT: number;
     TEXT_BACKGROUND: number;
@@ -8,3 +7,4 @@ export declare const Colors: {
     INTERSECT_LINES: number[];
     GRAPH_BACKGROUND: number[];
 };
+export declare const showHelpMessage: () => void;

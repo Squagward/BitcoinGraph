@@ -5,3 +5,7 @@ export declare const findBounds: (arr: DataPoint[]) => {
     yMax: number;
 };
 export declare const addCommas: (x: number) => string;
+export declare const findDayOfYear: () => number;
+export declare const findYearsAgo: (years: number) => number;
+export declare const getDaysBetween: (start: number, end: number) => number;
+export declare const findMonthsAgo: (months: number) => number;

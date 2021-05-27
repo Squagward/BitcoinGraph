@@ -70,7 +70,7 @@ export class ScatterPlot {
                 this.dragging = false;
         });
         register("dragged", (dx, dy, mx, my, btn) => {
-            if (!this.gui.isOpen())
+            if (!this.gui.isOpen() || (dx === 0 && dy === 0))
                 return;
             this.offsetX += dx;
             this.offsetY += dy;
@@ -89,7 +89,7 @@ export class ScatterPlot {
     }
     addPointsToScreen() {
         this.currentScreenPoints = [];
-        this.currentPlotPoints.forEach(([, price], i) => {
+        this.currentPlotPoints.forEach(({ price }, i) => {
             this.currentScreenPoints.push(this.priceToPoint(i, price));
         });
     }
@@ -97,7 +97,7 @@ export class ScatterPlot {
         this.totalPlotPoints = points;
     }
     setGraphRange(type) {
-        if (type === "max" || !(type in Range)) {
+        if (type.toLowerCase() === "max") {
             this.currentPlotPoints = this.totalPlotPoints;
         }
         else {
@@ -111,20 +111,21 @@ export class ScatterPlot {
         return { x, y };
     }
     constrainMouseX() {
-        return MathLib.clampFloat((Client.getMouseX() - this.offsetX) / this.zoom, this.left, this.right);
+        return (Client.getMouseX() - this.offsetX) / this.zoom;
     }
     closestPointToMouse() {
         let currentDistance = Number.MAX_VALUE;
         let closestIndex = -1;
-        this.currentPlotPoints.forEach(([, price], i) => {
-            let loc = this.priceToPoint(i, price);
-            if (distSquared(this.constrainMouseX(), 0, loc.x, 0) < currentDistance) {
-                currentDistance = distSquared(this.constrainMouseX(), 0, loc.x, 0);
+        const mouseX = this.constrainMouseX();
+        this.currentPlotPoints.forEach(({ price }, i) => {
+            const { x } = this.priceToPoint(i, price);
+            if (distSquared(mouseX, 0, x, 0) < currentDistance) {
+                currentDistance = distSquared(mouseX, 0, x, 0);
                 closestIndex = i;
             }
         });
         return {
-            pt: this.priceToPoint(closestIndex, this.currentPlotPoints[closestIndex][1]),
+            loc: this.priceToPoint(closestIndex, this.currentPlotPoints[closestIndex].price),
             index: closestIndex
         };
     }
@@ -144,7 +145,7 @@ export class ScatterPlot {
     drawIntersectLines() {
         if (!this.currentScreenPoints.length)
             return;
-        const { pt: { x, y } } = this.closestPointToMouse();
+        const { loc: { x, y } } = this.closestPointToMouse();
         GL11.glPushMatrix();
         GL11.glLineWidth(1);
         GL11.glTranslated(this.offsetX, this.offsetY, 0);
@@ -173,7 +174,7 @@ export class ScatterPlot {
         GL11.glPushMatrix();
         GL11.glTranslated(this.offsetX, this.offsetY, 0);
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
-        GL11.glLineWidth(1);
+        GL11.glLineWidth(2);
         GL11.glColor3d(...Colors.AXES);
         GL11.glBegin(GL11.GL_LINES);
         GL11.glVertex2d(this.xAxis[0], this.xAxis[1]);
@@ -184,8 +185,11 @@ export class ScatterPlot {
         GL11.glPopMatrix();
     }
     draw() {
-        if (!this.gui.isOpen())
-            return this.display.clearLines();
+        if (!this.gui.isOpen()) {
+            if (this.display.getLines().length)
+                this.display.clearLines();
+            return;
+        }
         Renderer.drawRect(this.backgroundColor, this.left, this.top, this.width, this.height);
         const sr = new ScaledResolution(Client.getMinecraft());
         const scaleFactor = sr.func_78325_e();
@@ -225,9 +229,8 @@ export class ScatterPlot {
         if (this.dragging)
             return;
         const { index } = this.closestPointToMouse();
-        this.display
-            .setLine(0, this.currentPlotPoints[index][0])
-            .setLine(1, addCommas(this.currentPlotPoints[index][1]));
+        const { date, price } = this.currentPlotPoints[index];
+        this.display.setLine(0, date).setLine(1, addCommas(price));
     }
     open() {
         const { xMax, yMax } = findBounds(this.currentPlotPoints);

@@ -131,7 +131,7 @@ export class ScatterPlot {
     });
 
     register("dragged", (dx, dy, mx, my, btn) => {
-      if (!this.gui.isOpen()) return;
+      if (!this.gui.isOpen() || (dx === 0 && dy === 0)) return;
       this.offsetX += dx;
       this.offsetY += dy;
 
@@ -152,7 +152,7 @@ export class ScatterPlot {
   private addPointsToScreen() {
     this.currentScreenPoints = [];
 
-    this.currentPlotPoints.forEach(([, price], i) => {
+    this.currentPlotPoints.forEach(({ price }, i) => {
       this.currentScreenPoints.push(this.priceToPoint(i, price));
     });
   }
@@ -162,7 +162,7 @@ export class ScatterPlot {
   }
 
   public setGraphRange(type: string) {
-    if (type === "max" || !(type in Range)) {
+    if (type.toLowerCase() === "max") {
       this.currentPlotPoints = this.totalPlotPoints;
     } else {
       this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
@@ -178,29 +178,26 @@ export class ScatterPlot {
   }
 
   private constrainMouseX() {
-    return MathLib.clampFloat(
-      (Client.getMouseX() - this.offsetX) / this.zoom,
-      this.left,
-      this.right
-    );
+    return (Client.getMouseX() - this.offsetX) / this.zoom;
   }
 
   private closestPointToMouse() {
     let currentDistance = Number.MAX_VALUE;
     let closestIndex = -1;
 
-    this.currentPlotPoints.forEach(([, price], i) => {
-      let loc = this.priceToPoint(i, price);
+    const mouseX = this.constrainMouseX();
+    this.currentPlotPoints.forEach(({ price }, i) => {
+      const { x } = this.priceToPoint(i, price);
 
-      if (distSquared(this.constrainMouseX(), 0, loc.x, 0) < currentDistance) {
-        currentDistance = distSquared(this.constrainMouseX(), 0, loc.x, 0);
+      if (distSquared(mouseX, 0, x, 0) < currentDistance) {
+        currentDistance = distSquared(mouseX, 0, x, 0);
         closestIndex = i;
       }
     });
     return {
-      pt: this.priceToPoint(
+      loc: this.priceToPoint(
         closestIndex,
-        this.currentPlotPoints[closestIndex][1]
+        this.currentPlotPoints[closestIndex].price
       ),
       index: closestIndex
     };
@@ -224,7 +221,7 @@ export class ScatterPlot {
   private drawIntersectLines() {
     if (!this.currentScreenPoints.length) return;
     const {
-      pt: { x, y }
+      loc: { x, y }
     } = this.closestPointToMouse();
 
     GL11.glPushMatrix();
@@ -261,7 +258,7 @@ export class ScatterPlot {
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
-    GL11.glLineWidth(1);
+    GL11.glLineWidth(2);
     GL11.glColor3d(...Colors.AXES);
     GL11.glBegin(GL11.GL_LINES);
     GL11.glVertex2d(this.xAxis[0], this.xAxis[1]);
@@ -273,7 +270,10 @@ export class ScatterPlot {
   }
 
   public draw() {
-    if (!this.gui.isOpen()) return this.display.clearLines();
+    if (!this.gui.isOpen()) {
+      if (this.display.getLines().length) this.display.clearLines();
+      return;
+    }
     Renderer.drawRect(
       this.backgroundColor,
       this.left,
@@ -341,9 +341,8 @@ export class ScatterPlot {
   private drawLabels() {
     if (this.dragging) return;
     const { index } = this.closestPointToMouse();
-    this.display
-      .setLine(0, this.currentPlotPoints[index][0])
-      .setLine(1, addCommas(this.currentPlotPoints[index][1]));
+    const { date, price } = this.currentPlotPoints[index];
+    this.display.setLine(0, date).setLine(1, addCommas(price));
   }
 
   public open() {
