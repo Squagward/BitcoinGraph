@@ -1,3 +1,4 @@
+export declare const GL11: any;
 export declare type DataPoint = {
     date: string;
     price: number;

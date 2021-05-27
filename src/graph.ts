@@ -2,13 +2,12 @@
 /// <reference lib="es2015" />
 
 import { Colors, Range } from "./constants";
-import { Axis, DataPoint, ScreenPoint } from "./types";
-import { addCommas, distSquared, findBounds } from "./utils";
+import { Axis, DataPoint, GL11, ScreenPoint } from "./types";
+import { addCommas, createList, distSquared, findBounds } from "./utils";
 
-const GL11 = Java.type("org.lwjgl.opengl.GL11");
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
-export class ScatterPlot {
+export class BitcoinGraph {
   private gui: Gui;
   private display: Display;
 
@@ -90,6 +89,12 @@ export class ScatterPlot {
 
     this.totalDays = 0;
     this.maxPrice = 0;
+
+    // force this context on the current class
+    this.shadeGraphBackground = this.shadeGraphBackground.bind(this);
+    this.drawAxes = this.drawAxes.bind(this);
+    this.drawIntersectLines = this.drawIntersectLines.bind(this);
+    this.drawPoints = this.drawPoints.bind(this);
 
     this.gui.registerScrolled((mx, my, dir) => {
       this.offsetX -= mx;
@@ -292,47 +297,23 @@ export class ScatterPlot {
       this.height * scaleFactor
     );
 
-    if (this.changedPos) {
-      if (!this.pointList) {
-        this.pointList = GL11.glGenLists(1);
-      }
+    const { changedVar: changedPos, list: pointList } = createList(
+      this.changedPos,
+      this.pointList,
+      this.shadeGraphBackground,
+      this.drawAxes,
+      this.drawPoints
+    );
+    this.changedPos = changedPos;
+    this.pointList = pointList;
 
-      GL11.glNewList(this.pointList, GL11.GL_COMPILE);
-
-      GL11.glDisable(GL11.GL_TEXTURE_2D);
-      GL11.glEnable(GL11.GL_SCISSOR_TEST);
-
-      this.shadeGraphBackground();
-      this.drawPoints();
-      this.drawAxes();
-
-      GL11.glDisable(GL11.GL_SCISSOR_TEST);
-      GL11.glEnable(GL11.GL_TEXTURE_2D);
-
-      GL11.glEndList();
-
-      this.changedPos = false;
-    }
-
-    if (this.changedMouse) {
-      if (!this.lineList) {
-        this.lineList = GL11.glGenLists(1);
-      }
-
-      GL11.glNewList(this.lineList, GL11.GL_COMPILE);
-
-      GL11.glDisable(GL11.GL_TEXTURE_2D);
-      GL11.glEnable(GL11.GL_SCISSOR_TEST);
-
-      this.drawIntersectLines();
-
-      GL11.glDisable(GL11.GL_SCISSOR_TEST);
-      GL11.glEnable(GL11.GL_TEXTURE_2D);
-
-      GL11.glEndList();
-
-      this.changedMouse = false;
-    }
+    const { changedVar: changedMouse, list: lineList } = createList(
+      this.changedMouse,
+      this.lineList,
+      this.drawIntersectLines
+    );
+    this.changedMouse = changedMouse;
+    this.lineList = lineList;
 
     GL11.glCallList(this.pointList);
     GL11.glCallList(this.lineList);

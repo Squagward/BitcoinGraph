@@ -1,6 +1,6 @@
 // @ts-ignore
 import numeral from "../../numeraljs";
-import { DataPoint } from "./types";
+import { DataPoint, GL11 } from "./types";
 
 export const distSquared = (x1: number, y1: number, x2: number, y2: number) => {
   return (x1 - x2) ** 2 + (y1 - y2) ** 2;
@@ -39,4 +39,31 @@ export const getDaysBetween = (start: number, end: number) => {
 
 export const findMonthsAgo = (months: number) => {
   return new Date().setMonth(new Date().getMonth() - months);
+};
+
+export const createList = (
+  changedVar: boolean,
+  list: number | undefined,
+  ...fns: (() => void)[]
+) => {
+  if (changedVar) {
+    if (!list) {
+      list = GL11.glGenLists(1);
+    }
+
+    GL11.glNewList(list, GL11.GL_COMPILE);
+
+    GL11.glDisable(GL11.GL_TEXTURE_2D);
+    GL11.glEnable(GL11.GL_SCISSOR_TEST);
+
+    fns.forEach((fn) => fn());
+
+    GL11.glDisable(GL11.GL_SCISSOR_TEST);
+    GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+    GL11.glEndList();
+
+    changedVar = false;
+  }
+  return { changedVar, list };
 };

@@ -13,6 +13,7 @@ export const Range = {
 export const Colors = {
     TEXT: Renderer.color(214, 200, 49),
     TEXT_BACKGROUND: Renderer.color(77, 77, 77),
+    GRAPH_OUT_OF_BOUNDS: Renderer.color(100, 100, 100),
     AXES: [235 / 255, 64 / 255, 52 / 255],
     POINTS: [52 / 255, 168 / 255, 235 / 255],
     INTERSECT_LINES: [52 / 255, 235 / 255, 101 / 255],

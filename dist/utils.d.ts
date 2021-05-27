@@ -9,3 +9,7 @@ export declare const findDayOfYear: () => number;
 export declare const findYearsAgo: (years: number) => number;
 export declare const getDaysBetween: (start: number, end: number) => number;
 export declare const findMonthsAgo: (months: number) => number;
+export declare const createList: (changedVar: boolean, list: number | undefined, ...fns: (() => void)[]) => {
+    changedVar: false;
+    list: number | undefined;
+};

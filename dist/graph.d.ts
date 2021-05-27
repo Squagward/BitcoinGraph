@@ -1,6 +1,6 @@
 /// <reference lib="es2015" />
 import { DataPoint } from "./types";
-export declare class ScatterPlot {
+export declare class BitcoinGraph {
     private width;
     private height;
     private backgroundColor;

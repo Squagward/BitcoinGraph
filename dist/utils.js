@@ -1,4 +1,5 @@
 import numeral from "../../numeraljs";
+import { GL11 } from "./types";
 export const distSquared = (x1, y1, x2, y2) => {
     return Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2);
 };
@@ -25,4 +26,20 @@ export const getDaysBetween = (start, end) => {
 };
 export const findMonthsAgo = (months) => {
     return new Date().setMonth(new Date().getMonth() - months);
+};
+export const createList = (changedVar, list, ...fns) => {
+    if (changedVar) {
+        if (!list) {
+            list = GL11.glGenLists(1);
+        }
+        GL11.glNewList(list, GL11.GL_COMPILE);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        fns.forEach((fn) => fn());
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glEndList();
+        changedVar = false;
+    }
+    return { changedVar, list };
 };

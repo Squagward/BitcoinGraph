@@ -3,9 +3,9 @@
 
 import { addCustomCompletion } from "../CustomTabCompletions";
 import { request } from "../requestV2";
-import { showHelpMessage, Range, ScatterPlot } from "./dist";
+import { BitcoinGraph, Colors, showHelpMessage, Range } from "./dist";
 
-const plot = new ScatterPlot(300, 300, Renderer.color(100, 100, 100));
+const plot = new BitcoinGraph(300, 300, Colors.GRAPH_OUT_OF_BOUNDS);
 const points = [];
 
 register("renderOverlay", (e) => {
