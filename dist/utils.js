@@ -1,7 +1,8 @@
 import numeral from "../../numeraljs";
+import * as moment from "../../moment";
 import { GL11 } from "./types";
-export const distSquared = (x1, y1, x2, y2) => {
-    return Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2);
+export const formatDate = (date) => {
+    return new Date(date).toISOString().split("T")[0];
 };
 export const findBounds = (arr) => {
     const xMax = arr.length - 1;
@@ -9,24 +10,6 @@ export const findBounds = (arr) => {
     return { xMax, yMax };
 };
 export const addCommas = (x) => numeral(x).format("$0,0.00");
-const MS_IN_DAY = 86400000;
-export const findDayOfYear = () => {
-    const today = new Date();
-    return Math.ceil((Number(today) - Number(new Date(today.getFullYear(), 0, 1))) / MS_IN_DAY);
-};
-export const findYearsAgo = (years) => {
-    return new Date().setFullYear(new Date().getFullYear() - years);
-};
-export const getDaysBetween = (start, end) => {
-    const date1 = new Date(start);
-    const date2 = new Date(end);
-    date1.setHours(0, 0, 0);
-    date2.setHours(0, 0, 0);
-    return Math.round((date2.getTime() - date1.getTime()) / MS_IN_DAY);
-};
-export const findMonthsAgo = (months) => {
-    return new Date().setMonth(new Date().getMonth() - months);
-};
 export const createList = (changedVar, list, ...fns) => {
     if (changedVar) {
         if (!list) {
@@ -42,4 +25,72 @@ export const createList = (changedVar, list, ...fns) => {
         changedVar = false;
     }
     return { changedVar, list };
+};
+export const findDayOfYear = () => moment().utc().dayOfYear();
+export const findMonthsAgo = (months) => {
+    return moment().utc().startOf("day").subtract(months, "month");
+};
+export const findYearsAgo = (years) => {
+    return moment().utc().startOf("day").subtract(years, "year");
+};
+export const getDaysBetween = (start) => {
+    return (moment()
+        .utc()
+        .startOf("day")
+        .diff(moment(start).utc().startOf("day"), "days") + 1);
+};
+const dayIn300 = (date) => {
+    return moment(date).add(300, "day");
+};
+export const Range = {
+    "5d": 5,
+    "1m": getDaysBetween(findMonthsAgo(1)),
+    "3m": getDaysBetween(findMonthsAgo(3)),
+    "6m": getDaysBetween(findMonthsAgo(6)),
+    "ytd": findDayOfYear(),
+    "1y": getDaysBetween(findYearsAgo(1)),
+    "2y": getDaysBetween(findYearsAgo(2)),
+    "5y": getDaysBetween(findYearsAgo(5))
+};
+export const Colors = {
+    TEXT: [214, 200, 49],
+    TEXT_BACKGROUND: [77, 77, 77],
+    GRAPH_OUT_OF_BOUNDS: [100, 100, 100],
+    AXES: [235 / 255, 64 / 255, 52 / 255],
+    POINTS: [52 / 255, 168 / 255, 235 / 255],
+    INTERSECT_LINES: [52 / 255, 235 / 255, 101 / 255],
+    GRAPH_BACKGROUND: [77 / 255, 77 / 255, 77 / 255]
+};
+export const StartDates = {
+    BTC: 1437350400000,
+    ETH: 1463529600000,
+    DOGE: 1622678400000,
+    USDT: 1620086400000,
+    ADA: 1616025600000,
+    XLM: 1552521600000,
+    LINK: 1561680000000,
+    UNI: 1600300800000,
+    BCH: 1513728000000,
+    LTC: 1471478400000,
+    GRT: 1608163200000,
+    FIL: 1607472000000,
+    AAVE: 1607990400000,
+    EOS: 1554768000000,
+    ALGO: 1565827200000,
+    XTZ: 1565049600000,
+    YFI: 1600128000000,
+    NU: 1606867200000
+};
+export const loopFromStart = (startDate) => {
+    const dates = [];
+    let start = startDate;
+    while (start < moment().valueOf()) {
+        dates.push(formatDate(start));
+        if (dates.length !== 1) {
+            start = moment(start).add(1, "day").valueOf();
+            dates.push(formatDate(start));
+        }
+        start = moment(dayIn300(start)).valueOf();
+    }
+    return dates;
 };

@@ -1,54 +1,81 @@
 /// <reference types="../CTAutocomplete/index" />
 /// <reference lib="esnext" />
 
-import { addCustomCompletion } from "../CustomTabCompletions";
 import { request } from "../requestV2";
-import { BitcoinGraph, Colors, showHelpMessage, Range } from "./dist";
+import { Promise } from "../PromiseV2";
+import * as moment from "../moment";
+import Settings from "./dist/settings";
+import {
+  BitcoinGraph,
+  Colors,
+  formatDate,
+  loopFromStart,
+  StartDates,
+  Range
+} from "./dist";
 
-const plot = new BitcoinGraph(300, 300, Colors.GRAPH_OUT_OF_BOUNDS);
-const points = [];
+register("command", () => Settings.openGUI()).setName("btc");
+
+let points = [];
+const plot = new BitcoinGraph(
+  300,
+  300,
+  Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS)
+);
 
 register("renderOverlay", (e) => {
   plot.draw();
 });
 
-const command = register("command", (type) => {
-  const lowerType = type?.toLowerCase() ?? type;
-  if (!Object.keys(Range).includes(lowerType) && lowerType !== "max") {
-    return showHelpMessage();
+register("step", (steps) => {
+  if (!Settings.reopen || !points.length) return;
+  Settings.reopen = false;
+  plot.open();
+}).setDelay(1);
+
+register("step", (steps) => {
+  if (!Settings.clicked) return;
+  Settings.clicked = false;
+  points = [];
+
+  const times = loopFromStart(Object.values(StartDates)[Settings.coinIndex]);
+  const promises = [];
+
+  while (times.length) {
+    promises.push(
+      request({
+        url: `https://api.pro.coinbase.com/products/${
+          Object.keys(StartDates)[Settings.coinIndex]
+        }-USD/candles`,
+        qs: {
+          granularity: 86400,
+          start: times.shift() ?? formatDate(moment().valueOf()),
+          end: times.shift() ?? formatDate(moment().valueOf())
+        },
+        headers: {
+          "User-Agent": "Mozilla/5.0 (ChatTriggers)"
+        },
+        timeout: 10000,
+        json: true
+      })
+    );
   }
 
-  plot.setGraphRange(lowerType);
-  plot.open();
-}).setName("btc");
+  Promise.all(promises)
+    .then((datas) => {
+      datas.forEach((res) => {
+        for ([date, , price] of res) {
+          points.push({ date: formatDate(date * 1000), price });
+        }
+      });
 
-addCustomCompletion(command, (args) => {
-  return args.length === 1 ? [...Object.keys(Range), "max"] : "";
-});
-
-const today = new Date();
-const month =
-  today.getMonth() < 9 ? `0${today.getMonth() + 1}` : today.getMonth() + 1;
-const day = today.getDate() < 10 ? `0${today.getDate()}` : today.getDate();
-
-request({
-  url: "https://api.coindesk.com/v1/bpi/historical/close.json",
-  qs: {
-    start: "2013-09-01",
-    end: `${today.getFullYear()}-${month}-${day}`
-  },
-  timeout: 10000,
-  json: true
-})
-  .then(({ bpi }) => {
-    for (let key in bpi) {
-      if (typeof bpi[key] !== "number") continue;
-
-      points.push({ date: key, price: bpi[key] });
-    }
-    plot.addPlotPoints(points);
-  })
-  .catch((e) => {
-    new Message("§cError loading the data :(").chat();
-    console.log(JSON.stringify(e));
-  });
+      plot.addPlotPoints(points.sort((a, b) => a.date.localeCompare(b.date)));
+      plot.setGraphRange(Object.keys(Range)[Settings.rangeIndex] ?? "max");
+      plot.open();
+    })
+    .catch((e) => {
+      Client.currentGui.close();
+      new Message("§cError loading the data :(").chat();
+      console.log(JSON.stringify(e));
+    });
+}).setDelay(1);

@@ -1,10 +1,10 @@
 {
   "name": "BitcoinGraph",
   "creator": "Squagward",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "entry": "index.js",
-  "description": "Shows historical Bitcoin price data provided by CoinDesk",
+  "description": "Shows historical price data for various cryptocurrencies provided by CoinBase Pro's API",
   "helpMessage": "\n§9BitcoinGraph by Squagward\n/btc for more info!\n",
-  "requires": ["CustomTabCompletions", "numeraljs", "request"],
+  "requires": ["moment", "numeraljs", "requestV2", "Vigilance"],
   "$schema": "../CTAutocomplete/schema.json"
 }

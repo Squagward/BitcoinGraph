@@ -1,9 +1,8 @@
 /// <reference types="../../CTAutocomplete/index" />
 /// <reference lib="es2015" />
 
-import { Colors, Range } from "./constants";
 import { Axis, DataPoint, GL11, ScreenPoint } from "./types";
-import { addCommas, createList, distSquared, findBounds } from "./utils";
+import { addCommas, Colors, createList, findBounds, Range } from "./utils";
 
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
@@ -65,8 +64,8 @@ export class BitcoinGraph {
       .setRenderLoc(this.left - 10, this.screenCenterY)
       .setAlign(DisplayHandler.Align.RIGHT)
       .setBackground(DisplayHandler.Background.FULL)
-      .setTextColor(Colors.TEXT)
-      .setBackgroundColor(Colors.TEXT_BACKGROUND);
+      .setTextColor(Renderer.color(...Colors.TEXT))
+      .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND));
 
     this.totalPlotPoints = [];
     this.currentPlotPoints = [];
@@ -194,8 +193,8 @@ export class BitcoinGraph {
     this.currentPlotPoints.forEach(({ price }, i) => {
       const { x } = this.priceToPoint(i, price);
 
-      if (distSquared(mouseX, 0, x, 0) < currentDistance) {
-        currentDistance = distSquared(mouseX, 0, x, 0);
+      if (Math.hypot(mouseX - x, 0) < currentDistance) {
+        currentDistance = Math.hypot(mouseX - x, 0);
         closestIndex = i;
       }
     });
@@ -260,10 +259,10 @@ export class BitcoinGraph {
 
   private drawAxes() {
     GL11.glPushMatrix();
+    GL11.glLineWidth(2);
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
 
-    GL11.glLineWidth(2);
     GL11.glColor3d(...Colors.AXES);
     GL11.glBegin(GL11.GL_LINES);
     GL11.glVertex2d(this.xAxis[0], this.xAxis[1]);
