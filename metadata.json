@@ -1,7 +1,7 @@
 {
   "name": "BitcoinGraph",
   "creator": "Squagward",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "entry": "index.js",
   "description": "Shows historical price data for various cryptocurrencies provided by CoinBase Pro's API",
   "helpMessage": "\n§9BitcoinGraph by Squagward\n/btc for more info!\n",

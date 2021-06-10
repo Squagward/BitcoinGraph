@@ -1,9 +1,7 @@
-/// <reference lib="es2015" />
-import { DataPoint } from "./types";
+import type { DataPoint } from "./types";
 export declare class BitcoinGraph {
     private width;
     private height;
-    private backgroundColor;
     private gui;
     private display;
     private left;
@@ -22,16 +20,12 @@ export declare class BitcoinGraph {
     private changedMouse;
     private clicked;
     private dragging;
-    private pointList?;
-    private lineList?;
+    private pointList;
+    private lineList;
     private mousePos;
-    private readonly screenWidth;
-    private readonly screenHeight;
-    private readonly screenCenterX;
-    private readonly screenCenterY;
     private totalDays;
     private maxPrice;
-    constructor(width: number, height: number, backgroundColor: number);
+    constructor(width: number, height: number);
     private resetTransforms;
     private addPointsToScreen;
     addPlotPoints(points: DataPoint[]): void;
@@ -40,10 +34,10 @@ export declare class BitcoinGraph {
     private constrainMouseX;
     private closestPointToMouse;
     private shadeGraphBackground;
+    private drawLabels;
     private drawIntersectLines;
     private drawPoints;
     private drawAxes;
     draw(): void;
-    private drawLabels;
     open(): void;
 }

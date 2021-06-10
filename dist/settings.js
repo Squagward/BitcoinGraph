@@ -3,7 +3,7 @@ import {
   @SelectorProperty,
   @Vigilant
 } from "../../Vigilance";
-import { Range } from "./index";
+import { Range } from "./utils";
 
 @Vigilant("BitcoinGraph")
 class Settings {

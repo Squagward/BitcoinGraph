@@ -1,8 +1,7 @@
-/// <reference types="../../CTAutocomplete/index" />
-/// <reference lib="es2015" />
-
-import { Axis, DataPoint, GL11, ScreenPoint } from "./types";
-import { addCommas, Colors, createList, findBounds, Range } from "./utils";
+import { Colors, screenCenterX, screenCenterY } from "./constants";
+import { GL11 } from "./types";
+import type { Axis, DataPoint, ScreenPoint } from "./types";
+import { addCommas, createList, findBounds, Range } from "./utils";
 
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 
@@ -33,35 +32,25 @@ export class BitcoinGraph {
   private clicked: boolean;
   private dragging: boolean;
 
-  private pointList?: number;
-  private lineList?: number;
+  private pointList!: number;
+  private lineList!: number;
 
   private mousePos: [number, number];
-
-  private readonly screenWidth = Renderer.screen.getWidth();
-  private readonly screenHeight = Renderer.screen.getHeight();
-
-  private readonly screenCenterX = this.screenWidth / 2;
-  private readonly screenCenterY = this.screenHeight / 2;
 
   private totalDays: number;
   private maxPrice: number;
 
-  constructor(
-    private width: number,
-    private height: number,
-    private backgroundColor: number
-  ) {
+  constructor(private width: number, private height: number) {
     this.gui = new Gui();
 
-    this.left = this.screenCenterX - this.width / 2;
-    this.right = this.screenCenterX + this.width / 2;
+    this.left = screenCenterX - this.width / 2;
+    this.right = screenCenterX + this.width / 2;
 
-    this.top = this.screenCenterY - this.height / 2;
-    this.bottom = this.screenCenterY + this.height / 2;
+    this.top = screenCenterY - this.height / 2;
+    this.bottom = screenCenterY + this.height / 2;
 
     this.display = new Display()
-      .setRenderLoc(this.left - 10, this.screenCenterY)
+      .setRenderLoc(this.left - 10, screenCenterY)
       .setAlign(DisplayHandler.Align.RIGHT)
       .setBackground(DisplayHandler.Background.FULL)
       .setTextColor(Renderer.color(...Colors.TEXT))
@@ -145,7 +134,7 @@ export class BitcoinGraph {
     });
   }
 
-  private resetTransforms() {
+  private resetTransforms(): void {
     this.offsetX = 0;
     this.offsetY = 0;
     this.zoom = 1;
@@ -153,7 +142,7 @@ export class BitcoinGraph {
     this.changedMouse = true;
   }
 
-  private addPointsToScreen() {
+  private addPointsToScreen(): void {
     this.currentScreenPoints = [];
 
     this.currentPlotPoints.forEach(({ price }, i) => {
@@ -161,11 +150,11 @@ export class BitcoinGraph {
     });
   }
 
-  public addPlotPoints(points: DataPoint[]) {
+  public addPlotPoints(points: DataPoint[]): void {
     this.totalPlotPoints = points;
   }
 
-  public setGraphRange(type: string) {
+  public setGraphRange(type: string): void {
     if (type.toLowerCase() === "max") {
       this.currentPlotPoints = this.totalPlotPoints;
     } else {
@@ -181,7 +170,7 @@ export class BitcoinGraph {
     return { x, y };
   }
 
-  private constrainMouseX() {
+  private constrainMouseX(): number {
     return (Client.getMouseX() - this.offsetX) / this.zoom;
   }
 
@@ -193,8 +182,8 @@ export class BitcoinGraph {
     this.currentPlotPoints.forEach(({ price }, i) => {
       const { x } = this.priceToPoint(i, price);
 
-      if (Math.hypot(mouseX - x, 0) < currentDistance) {
-        currentDistance = Math.hypot(mouseX - x, 0);
+      if (Math.abs(mouseX - x) < currentDistance) {
+        currentDistance = Math.abs(mouseX - x);
         closestIndex = i;
       }
     });
@@ -207,7 +196,7 @@ export class BitcoinGraph {
     };
   }
 
-  private shadeGraphBackground() {
+  private shadeGraphBackground(): void {
     GL11.glPushMatrix();
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
     GL11.glScaled(this.zoom, this.zoom, this.zoom);
@@ -222,7 +211,14 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  private drawIntersectLines() {
+  private drawLabels(): void {
+    if (this.dragging) return;
+    const { index } = this.closestPointToMouse();
+    const { date, price } = this.currentPlotPoints[index];
+    this.display.setLine(0, date).setLine(1, addCommas(price));
+  }
+
+  private drawIntersectLines(): void {
     if (!this.currentScreenPoints.length) return;
     const {
       loc: { x, y }
@@ -244,7 +240,7 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  private drawPoints() {
+  private drawPoints(): void {
     GL11.glPushMatrix();
     GL11.glLineWidth(1);
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
@@ -257,7 +253,7 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  private drawAxes() {
+  private drawAxes(): void {
     GL11.glPushMatrix();
     GL11.glLineWidth(2);
     GL11.glTranslated(this.offsetX, this.offsetY, 0);
@@ -273,13 +269,13 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  public draw() {
+  public draw(): void {
     if (!this.gui.isOpen()) {
       if (this.display.getLines().length) this.display.clearLines();
       return;
     }
     Renderer.drawRect(
-      this.backgroundColor,
+      Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS),
       this.left,
       this.top,
       this.width,
@@ -318,14 +314,7 @@ export class BitcoinGraph {
     GL11.glCallList(this.lineList);
   }
 
-  private drawLabels() {
-    if (this.dragging) return;
-    const { index } = this.closestPointToMouse();
-    const { date, price } = this.currentPlotPoints[index];
-    this.display.setLine(0, date).setLine(1, addCommas(price));
-  }
-
-  public open() {
+  public open(): void {
     const { xMax, yMax } = findBounds(this.currentPlotPoints);
     this.totalDays = xMax;
     this.maxPrice = yMax;

@@ -1,22 +1,18 @@
+import { Colors, screenCenterX, screenCenterY } from "./constants";
 import { GL11 } from "./types";
-import { addCommas, Colors, createList, findBounds, Range } from "./utils";
+import { addCommas, createList, findBounds, Range } from "./utils";
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 export class BitcoinGraph {
-    constructor(width, height, backgroundColor) {
+    constructor(width, height) {
         this.width = width;
         this.height = height;
-        this.backgroundColor = backgroundColor;
-        this.screenWidth = Renderer.screen.getWidth();
-        this.screenHeight = Renderer.screen.getHeight();
-        this.screenCenterX = this.screenWidth / 2;
-        this.screenCenterY = this.screenHeight / 2;
         this.gui = new Gui();
-        this.left = this.screenCenterX - this.width / 2;
-        this.right = this.screenCenterX + this.width / 2;
-        this.top = this.screenCenterY - this.height / 2;
-        this.bottom = this.screenCenterY + this.height / 2;
+        this.left = screenCenterX - this.width / 2;
+        this.right = screenCenterX + this.width / 2;
+        this.top = screenCenterY - this.height / 2;
+        this.bottom = screenCenterY + this.height / 2;
         this.display = new Display()
-            .setRenderLoc(this.left - 10, this.screenCenterY)
+            .setRenderLoc(this.left - 10, screenCenterY)
             .setAlign(DisplayHandler.Align.RIGHT)
             .setBackground(DisplayHandler.Background.FULL)
             .setTextColor(Renderer.color(...Colors.TEXT))
@@ -122,8 +118,8 @@ export class BitcoinGraph {
         const mouseX = this.constrainMouseX();
         this.currentPlotPoints.forEach(({ price }, i) => {
             const { x } = this.priceToPoint(i, price);
-            if (Math.hypot(mouseX - x, 0) < currentDistance) {
-                currentDistance = Math.hypot(mouseX - x, 0);
+            if (Math.abs(mouseX - x) < currentDistance) {
+                currentDistance = Math.abs(mouseX - x);
                 closestIndex = i;
             }
         });
@@ -144,6 +140,13 @@ export class BitcoinGraph {
         GL11.glVertex2d(this.right, this.top);
         GL11.glEnd();
         GL11.glPopMatrix();
+    }
+    drawLabels() {
+        if (this.dragging)
+            return;
+        const { index } = this.closestPointToMouse();
+        const { date, price } = this.currentPlotPoints[index];
+        this.display.setLine(0, date).setLine(1, addCommas(price));
     }
     drawIntersectLines() {
         if (!this.currentScreenPoints.length)
@@ -193,7 +196,7 @@ export class BitcoinGraph {
                 this.display.clearLines();
             return;
         }
-        Renderer.drawRect(this.backgroundColor, this.left, this.top, this.width, this.height);
+        Renderer.drawRect(Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS), this.left, this.top, this.width, this.height);
         const sr = new ScaledResolution(Client.getMinecraft());
         const scaleFactor = sr.func_78325_e();
         GL11.glScissor(this.left * scaleFactor, this.top * scaleFactor, this.width * scaleFactor, this.height * scaleFactor);
@@ -205,13 +208,6 @@ export class BitcoinGraph {
         this.lineList = lineList;
         GL11.glCallList(this.pointList);
         GL11.glCallList(this.lineList);
-    }
-    drawLabels() {
-        if (this.dragging)
-            return;
-        const { index } = this.closestPointToMouse();
-        const { date, price } = this.currentPlotPoints[index];
-        this.display.setLine(0, date).setLine(1, addCommas(price));
     }
     open() {
         const { xMax, yMax } = findBounds(this.currentPlotPoints);
