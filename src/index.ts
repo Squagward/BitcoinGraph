@@ -5,8 +5,6 @@
 import { request } from "../../requestV2";
 // @ts-ignore
 import * as moment from "../../moment";
-// @ts-ignore
-import { URI, WebSocketClient } from "../../WebSocket";
 
 import { StartDates } from "./constants";
 import { BitcoinGraph } from "./graph";
@@ -14,6 +12,9 @@ import { formatDate, loopFromStart, Range } from "./utils";
 import type { DataPoint, DataEntry } from "./types";
 // @ts-ignore
 import Settings from "../dist/settings";
+
+const URI = Java.type("java.net.URI");
+const WebSocketClient = Java.type("org.java_websocket.client.WebSocketClient");
 
 let points: DataPoint[] = [];
 const graph = new BitcoinGraph(300, 300);
@@ -101,6 +102,27 @@ const mySocket = new JavaAdapter(
   },
   new URI("wss://ws-feed.pro.coinbase.com")
 );
+
+//TODO
+// add hud option w/ daily change tracking for live
+
+/*{
+  type: "ticker",
+  sequence: 26483366972,
+  product_id: "BTC-USD",
+  price: "37515.21",
+  open_24h: "38527.52",
+  volume_24h: "15284.00634995",
+  low_24h: "37432.1",
+  high_24h: "39554.98",
+  volume_30d: "811797.97456377",
+  best_bid: "37515.20",
+  best_ask: "37515.21",
+  side: "buy",
+  time: "2021-06-17T20:04:22.129159Z",
+  trade_id: 187061212,
+  last_size: "0.00058407"
+};*/
 
 register("step", () => {
   if (!Settings.liveFeed) return;

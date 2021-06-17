@@ -1,10 +1,11 @@
 import { request } from "../../requestV2";
 import * as moment from "../../moment";
-import { URI, WebSocketClient } from "../../WebSocket";
 import { StartDates } from "./constants";
 import { BitcoinGraph } from "./graph";
 import { formatDate, loopFromStart, Range } from "./utils";
 import Settings from "../dist/settings";
+const URI = Java.type("java.net.URI");
+const WebSocketClient = Java.type("org.java_websocket.client.WebSocketClient");
 let points = [];
 const graph = new BitcoinGraph(300, 300);
 register("command", () => Settings.openGUI()).setName("btc");
