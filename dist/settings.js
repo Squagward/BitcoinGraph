@@ -43,11 +43,10 @@ class Settings {
   rangeIndex = Object.keys(Range).length;
 
   clicked = false;
-  reopen = false;
 
   @ButtonProperty({
-    name: "Request the Data",
-    description: "Click to request the prices",
+    name: "Request Historical Data",
+    description: "Click to request the historical prices",
     category: "General",
     placeholder: "Request"
   })
@@ -55,13 +54,16 @@ class Settings {
     this.clicked = true;
   }
 
+  liveFeed = false;
+
   @ButtonProperty({
-    name: "Reopen Graph",
-    description: "Click to reopen the recent data",
-    category: "General"
+    name: "Start Live Data Feed",
+    description: "Click to start receiving live price updates",
+    category: "General",
+    placeholder: "Request"
   })
-  reopenGui() {
-    this.reopen = true;
+  toggleFeedClicked() {
+    this.liveFeed = true;
   }
 
   constructor() {

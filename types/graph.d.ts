@@ -9,7 +9,7 @@ export declare class BitcoinGraph {
     private top;
     private bottom;
     private totalPlotPoints;
-    private currentPlotPoints;
+    currentPlotPoints: DataPoint[];
     private currentScreenPoints;
     private zoom;
     private offsetX;
@@ -22,13 +22,15 @@ export declare class BitcoinGraph {
     private dragging;
     private pointList;
     private lineList;
-    private mousePos;
     private totalDays;
     private maxPrice;
+    private minPrice;
+    mode: string;
+    private tableTitle;
     constructor(width: number, height: number);
     private resetTransforms;
     private addPointsToScreen;
-    addPlotPoints(points: DataPoint[]): void;
+    setPlotPoints(points: DataPoint[]): void;
     setGraphRange(type: string): void;
     private priceToPoint;
     private constrainMouseX;
@@ -38,6 +40,7 @@ export declare class BitcoinGraph {
     private drawIntersectLines;
     private drawPoints;
     private drawAxes;
-    draw(): void;
-    open(): void;
+    draw(text: string): void;
+    drawLive(text: string): void;
+    open(mode: string): void;
 }

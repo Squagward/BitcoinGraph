@@ -15,7 +15,7 @@ export class BitcoinGraph {
   private bottom: number;
 
   private totalPlotPoints: DataPoint[];
-  private currentPlotPoints: DataPoint[];
+  public currentPlotPoints: DataPoint[];
   private currentScreenPoints: ScreenPoint[];
 
   private zoom: number;
@@ -35,10 +35,13 @@ export class BitcoinGraph {
   private pointList!: number;
   private lineList!: number;
 
-  private mousePos: [number, number];
-
   private totalDays: number;
   private maxPrice: number;
+  private minPrice: number;
+
+  public mode!: string;
+
+  private tableTitle: string;
 
   constructor(private width: number, private height: number) {
     this.gui = new Gui();
@@ -73,10 +76,11 @@ export class BitcoinGraph {
     this.clicked = false;
     this.dragging = false;
 
-    this.mousePos = [-1, -1];
-
     this.totalDays = 0;
     this.maxPrice = 0;
+    this.minPrice = 0;
+
+    this.tableTitle = "";
 
     // force this context on the current class
     this.shadeGraphBackground = this.shadeGraphBackground.bind(this);
@@ -108,14 +112,9 @@ export class BitcoinGraph {
     });
 
     register("step", (steps) => {
-      if (!this.gui.isOpen()) return;
-      this.mousePos[0] = this.mousePos[1];
-      this.mousePos[1] = Client.getMouseX();
-
-      if (this.mousePos[0] !== this.mousePos[1]) {
-        this.changedMouse = true;
-        this.drawLabels();
-      }
+      if (!this.gui.isOpen() || !this.currentPlotPoints.length) return;
+      this.changedMouse = true;
+      this.drawLabels();
     }).setFps(20);
 
     register("clicked", (mx, my, btn, down) => {
@@ -146,11 +145,11 @@ export class BitcoinGraph {
     this.currentScreenPoints = [];
 
     this.currentPlotPoints.forEach(({ price }, i) => {
-      this.currentScreenPoints.push(this.priceToPoint(i, price));
+      this.currentScreenPoints.push(this.priceToPoint(i, price, this.mode));
     });
   }
 
-  public addPlotPoints(points: DataPoint[]): void {
+  public setPlotPoints(points: DataPoint[]): void {
     this.totalPlotPoints = points;
   }
 
@@ -160,13 +159,23 @@ export class BitcoinGraph {
     } else {
       this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
     }
-
-    this.resetTransforms();
   }
 
-  private priceToPoint(index: number, price: number) {
-    const x = this.left + (index / this.totalDays) * this.width;
-    const y = this.bottom - (price / this.maxPrice) * this.height;
+  private priceToPoint(index: number, price: number, mode: string) {
+    const x = MathLib.map(index, 0, this.totalDays, this.left, this.right);
+    let y = this.bottom;
+
+    switch (mode) {
+      case "LIVE":
+        let denom = this.maxPrice - this.minPrice;
+        if (this.maxPrice === this.minPrice) denom = 1;
+        y -= ((price - this.minPrice) / denom) * this.height;
+
+        break;
+      case "HISTORICAL":
+        y -= (price / this.maxPrice) * this.height;
+        break;
+    }
     return { x, y };
   }
 
@@ -174,23 +183,25 @@ export class BitcoinGraph {
     return (Client.getMouseX() - this.offsetX) / this.zoom;
   }
 
-  private closestPointToMouse() {
+  private closestPointToMouse(mode: string) {
     let currentDistance = Number.MAX_VALUE;
-    let closestIndex = -1;
+    let closestIndex = 0;
 
     const mouseX = this.constrainMouseX();
     this.currentPlotPoints.forEach(({ price }, i) => {
-      const { x } = this.priceToPoint(i, price);
+      const { x } = this.priceToPoint(i, price, mode);
 
       if (Math.abs(mouseX - x) < currentDistance) {
         currentDistance = Math.abs(mouseX - x);
         closestIndex = i;
       }
     });
+
     return {
       loc: this.priceToPoint(
         closestIndex,
-        this.currentPlotPoints[closestIndex].price
+        this.currentPlotPoints[closestIndex].price,
+        mode
       ),
       index: closestIndex
     };
@@ -212,17 +223,18 @@ export class BitcoinGraph {
   }
 
   private drawLabels(): void {
-    if (this.dragging) return;
-    const { index } = this.closestPointToMouse();
+    if (this.dragging || !this.currentScreenPoints.length) return;
+    const { index } = this.closestPointToMouse(this.mode);
+
     const { date, price } = this.currentPlotPoints[index];
-    this.display.setLine(0, date).setLine(1, addCommas(price));
+    this.display.setLine(1, date).setLine(2, addCommas(price));
   }
 
   private drawIntersectLines(): void {
     if (!this.currentScreenPoints.length) return;
     const {
       loc: { x, y }
-    } = this.closestPointToMouse();
+    } = this.closestPointToMouse(this.mode);
 
     GL11.glPushMatrix();
     GL11.glLineWidth(1);
@@ -269,11 +281,16 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  public draw(): void {
-    if (!this.gui.isOpen()) {
+  public draw(text: string): void {
+    if (!this.gui.isOpen() || !this.currentPlotPoints.length) {
       if (this.display.getLines().length) this.display.clearLines();
       return;
     }
+    this.display.setLine(
+      0,
+      new DisplayLine(text).setAlign(DisplayHandler.Align.CENTER)
+    );
+
     Renderer.drawRect(
       Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS),
       this.left,
@@ -314,15 +331,68 @@ export class BitcoinGraph {
     GL11.glCallList(this.lineList);
   }
 
-  public open(): void {
-    const { xMax, yMax } = findBounds(this.currentPlotPoints);
+  public drawLive(text: string): void {
+    if (!this.gui.isOpen() || !this.currentPlotPoints.length) {
+      if (this.display.getLines().length) this.display.clearLines();
+      return;
+    }
+    this.display.setLine(
+      0,
+      new DisplayLine(text).setAlign(DisplayHandler.Align.CENTER)
+    );
+
+    const { xMax, yMin, yMax } = findBounds(this.currentPlotPoints);
     this.totalDays = xMax;
     this.maxPrice = yMax;
+    this.minPrice = yMin;
 
     this.addPointsToScreen();
 
+    Renderer.drawRect(
+      Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS),
+      this.left,
+      this.top,
+      this.width,
+      this.height
+    );
+
+    const sr = new ScaledResolution(Client.getMinecraft());
+    const scaleFactor = sr.func_78325_e(); // getScaleFactor
+
+    GL11.glScissor(
+      this.left * scaleFactor,
+      this.top * scaleFactor,
+      this.width * scaleFactor,
+      this.height * scaleFactor
+    );
+
+    GL11.glDisable(GL11.GL_TEXTURE_2D);
+    GL11.glEnable(GL11.GL_SCISSOR_TEST);
+
+    this.shadeGraphBackground();
+    this.drawPoints();
+    this.drawIntersectLines();
+
+    GL11.glDisable(GL11.GL_SCISSOR_TEST);
+    GL11.glEnable(GL11.GL_TEXTURE_2D);
+  }
+
+  public open(mode: string): void {
     this.changedPos = true;
     this.changedMouse = true;
+    this.resetTransforms();
     this.gui.open();
+    this.mode = mode;
+
+    switch (mode) {
+      case "HISTORICAL":
+        const { xMax, yMin, yMax } = findBounds(this.currentPlotPoints);
+        this.totalDays = xMax;
+        this.maxPrice = yMax;
+        this.minPrice = yMin;
+
+        this.addPointsToScreen();
+        break;
+    }
   }
 }

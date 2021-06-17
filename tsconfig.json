@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "es2015",
     "lib": ["es2015"],
-    "declaration": true,
+    "module": "es2015",
+    "target": "es2015",
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
-    "noImplicitAny": true,
+    "declarationDir": "./types",
     "alwaysStrict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true,
+    "declaration": true,
     "emitDecoratorMetadata": true,
-    "removeComments": true
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "removeComments": true,
+    "skipLibCheck": true,
+    "strict": true
   }
 }

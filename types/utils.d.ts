@@ -1,6 +1,7 @@
 import type { DataPoint } from "./types";
 export declare const findBounds: (arr: DataPoint[]) => {
     xMax: number;
+    yMin: number;
     yMax: number;
 };
 export declare const addCommas: (x: number) => string;

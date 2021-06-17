@@ -4,10 +4,10 @@ export const Colors = {
     TEXT: [214, 200, 49],
     TEXT_BACKGROUND: [77, 77, 77],
     GRAPH_OUT_OF_BOUNDS: [100, 100, 100],
-    AXES: [235 / 255, 64 / 255, 52 / 255],
-    POINTS: [52 / 255, 168 / 255, 235 / 255],
-    INTERSECT_LINES: [52 / 255, 235 / 255, 101 / 255],
-    GRAPH_BACKGROUND: [77 / 255, 77 / 255, 77 / 255]
+    AXES: [235, 64, 52].map((v) => v / 255),
+    POINTS: [52, 168, 235].map((v) => v / 255),
+    INTERSECT_LINES: [52, 235, 101].map((v) => v / 255),
+    GRAPH_BACKGROUND: [77, 77, 77].map((v) => v / 255)
 };
 export const StartDates = {
     BTC: 1437350400000,

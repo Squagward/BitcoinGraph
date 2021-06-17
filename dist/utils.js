@@ -2,9 +2,11 @@ import numeral from "../../numeraljs";
 import * as moment from "../../moment";
 import { GL11 } from "./types";
 export const findBounds = (arr) => {
+    const prices = arr.map(({ price }) => price);
     const xMax = arr.length - 1;
-    const yMax = Math.max(...arr.map(({ price }) => price));
-    return { xMax, yMax };
+    const yMin = Math.min(...prices);
+    const yMax = Math.max(...prices);
+    return { xMax, yMin, yMax };
 };
 export const addCommas = (x) => numeral(x).format("$0,0.00");
 export const createList = (changedVar, list, ...fns) => {
@@ -24,7 +26,7 @@ export const createList = (changedVar, list, ...fns) => {
     return { changedVar, list };
 };
 export const formatDate = (date) => {
-    return new Date(date).toISOString().split("T")[0];
+    return moment(date).utc().format("YYYY-MM-DD");
 };
 export const findDayOfYear = () => moment().utc().dayOfYear();
 export const findMonthsAgo = (months) => {

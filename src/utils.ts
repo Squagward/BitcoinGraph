@@ -6,9 +6,12 @@ import { GL11 } from "./types";
 import type { DataPoint } from "./types";
 
 export const findBounds = (arr: DataPoint[]) => {
+  const prices = arr.map(({ price }) => price);
+
   const xMax = arr.length - 1;
-  const yMax = Math.max(...arr.map(({ price }) => price));
-  return { xMax, yMax };
+  const yMin = Math.min(...prices);
+  const yMax = Math.max(...prices);
+  return { xMax, yMin, yMax };
 };
 
 export const addCommas = (x: number): string => numeral(x).format("$0,0.00");
@@ -41,7 +44,7 @@ export const createList = (
 };
 
 export const formatDate = (date: number): string => {
-  return new Date(date).toISOString().split("T")[0];
+  return moment(date).utc().format("YYYY-MM-DD");
 };
 
 export const findDayOfYear = (): number => moment().utc().dayOfYear();
