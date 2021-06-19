@@ -1,14 +1,18 @@
-import numeral from "../../numeraljs";
 import * as moment from "../../moment";
-import { GL11 } from "./types";
+import numeral from "../../numeraljs";
+import { GL11 } from "./constants";
 export const findBounds = (arr) => {
-    const prices = arr.map(({ price }) => price);
+    let yMin = arr[0].price;
+    let yMax = arr[0].price;
+    let price;
+    for ({ price } of arr) {
+        yMin = Math.min(yMin, price);
+        yMax = Math.max(yMax, price);
+    }
     const xMax = arr.length - 1;
-    const yMin = Math.min(...prices);
-    const yMax = Math.max(...prices);
     return { xMax, yMin, yMax };
 };
-export const addCommas = (x) => numeral(x).format("$0,0.00");
+export const addCommas = (x) => numeral(x).format("$0,0.0000");
 export const createList = (changedVar, list, ...fns) => {
     if (changedVar) {
         if (!list) {
@@ -28,33 +32,33 @@ export const createList = (changedVar, list, ...fns) => {
 export const formatDate = (date) => {
     return moment(date).utc().format("YYYY-MM-DD");
 };
-export const findDayOfYear = () => moment().utc().dayOfYear();
-export const findMonthsAgo = (months) => {
+const getDayOfYear = () => moment().utc().dayOfYear();
+const getDayOfMonthsAgo = (months) => {
     return moment().utc().startOf("day").subtract(months, "month");
 };
-export const findYearsAgo = (years) => {
+const getDayOfYearsAgo = (years) => {
     return moment().utc().startOf("day").subtract(years, "year");
 };
-export const getDaysBetween = (start) => {
+const getFinalDayInRange = (date) => {
+    return moment(date).utc().add(300, "day");
+};
+const getDaysBetween = (start) => {
     return (moment()
         .utc()
         .startOf("day")
         .diff(moment(start).utc().startOf("day"), "days") + 1);
 };
-const dayIn300 = (date) => {
-    return moment(date).utc().add(300, "day");
-};
 export const Range = {
     "5d": 5,
-    "1m": getDaysBetween(findMonthsAgo(1)),
-    "3m": getDaysBetween(findMonthsAgo(3)),
-    "6m": getDaysBetween(findMonthsAgo(6)),
-    "ytd": findDayOfYear(),
-    "1y": getDaysBetween(findYearsAgo(1)),
-    "2y": getDaysBetween(findYearsAgo(2)),
-    "5y": getDaysBetween(findYearsAgo(5))
+    "1m": getDaysBetween(getDayOfMonthsAgo(1)),
+    "3m": getDaysBetween(getDayOfMonthsAgo(3)),
+    "6m": getDaysBetween(getDayOfMonthsAgo(6)),
+    "ytd": getDayOfYear(),
+    "1y": getDaysBetween(getDayOfYearsAgo(1)),
+    "2y": getDaysBetween(getDayOfYearsAgo(2)),
+    "5y": getDaysBetween(getDayOfYearsAgo(5))
 };
-export const loopFromStart = (startDate) => {
+export const getDatesForLooping = (startDate) => {
     const dates = [];
     let start = startDate;
     while (start < moment().utc().valueOf()) {
@@ -63,7 +67,7 @@ export const loopFromStart = (startDate) => {
             start = moment(start).utc().add(1, "day").valueOf();
             dates.push(formatDate(start));
         }
-        start = moment(dayIn300(start)).utc().valueOf();
+        start = moment(getFinalDayInRange(start)).utc().valueOf();
     }
     return dates;
 };

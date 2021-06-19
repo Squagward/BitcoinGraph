@@ -1,3 +1,5 @@
+export const GL11 = Java.type("org.lwjgl.opengl.GL11");
+export const GraphDimensions = { width: 300, height: 300 };
 export const screenCenterX = Renderer.screen.getWidth() / 2;
 export const screenCenterY = Renderer.screen.getHeight() / 2;
 export const Colors = {

@@ -1,13 +1,17 @@
 import type { Triplet } from "./types";
 
+export const GL11 = Java.type("org.lwjgl.opengl.GL11");
+
+export const GraphDimensions = { width: 300, height: 300 };
+
 export const screenCenterX = Renderer.screen.getWidth() / 2;
 
 export const screenCenterY = Renderer.screen.getHeight() / 2;
 
 export const Colors: Record<string, Triplet> = {
-  TEXT: [214, 200, 49],
-  TEXT_BACKGROUND: [77, 77, 77],
-  GRAPH_OUT_OF_BOUNDS: [100, 100, 100],
+  TEXT: [214, 200, 49] as Triplet,
+  TEXT_BACKGROUND: [77, 77, 77] as Triplet,
+  GRAPH_OUT_OF_BOUNDS: [100, 100, 100] as Triplet,
   AXES: [235, 64, 52].map((v) => v / 255) as Triplet,
   POINTS: [52, 168, 235].map((v) => v / 255) as Triplet,
   INTERSECT_LINES: [52, 235, 101].map((v) => v / 255) as Triplet,
@@ -35,3 +39,8 @@ export const StartDates: Record<string, number> = {
   YFI: 1600128000000, // "2020-09-15"
   NU: 1606867200000 // "2020-12-02"
 };
+
+export const enum Mode {
+  HISTORICAL,
+  LIVE
+}

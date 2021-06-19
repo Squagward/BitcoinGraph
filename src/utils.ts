@@ -1,25 +1,30 @@
 // @ts-ignore
-import numeral from "../../numeraljs";
-// @ts-ignore
 import * as moment from "../../moment";
-import { GL11 } from "./types";
+// @ts-ignore
+import numeral from "../../numeraljs";
+import { GL11 } from "./constants";
 import type { DataPoint } from "./types";
 
 export const findBounds = (arr: DataPoint[]) => {
-  const prices = arr.map(({ price }) => price);
+  let yMin = arr[0].price;
+  let yMax = arr[0].price;
+
+  let price: number;
+  for ({ price } of arr) {
+    yMin = Math.min(yMin, price);
+    yMax = Math.max(yMax, price);
+  }
 
   const xMax = arr.length - 1;
-  const yMin = Math.min(...prices);
-  const yMax = Math.max(...prices);
   return { xMax, yMin, yMax };
 };
 
-export const addCommas = (x: number): string => numeral(x).format("$0,0.00");
+export const addCommas = (x: number): string => numeral(x).format("$0,0.0000");
 
 export const createList = (
   changedVar: boolean,
   list: number,
-  ...fns: Array<() => void>
+  ...fns: (() => void)[]
 ) => {
   if (changedVar) {
     if (!list) {
@@ -47,17 +52,21 @@ export const formatDate = (date: number): string => {
   return moment(date).utc().format("YYYY-MM-DD");
 };
 
-export const findDayOfYear = (): number => moment().utc().dayOfYear();
+const getDayOfYear = (): number => moment().utc().dayOfYear();
 
-export const findMonthsAgo = (months: number): number => {
+const getDayOfMonthsAgo = (months: number): number => {
   return moment().utc().startOf("day").subtract(months, "month");
 };
 
-export const findYearsAgo = (years: number): number => {
+const getDayOfYearsAgo = (years: number): number => {
   return moment().utc().startOf("day").subtract(years, "year");
 };
 
-export const getDaysBetween = (start: number): number => {
+const getFinalDayInRange = (date: number): string => {
+  return moment(date).utc().add(300, "day");
+};
+
+const getDaysBetween = (start: number): number => {
   return (
     moment()
       .utc()
@@ -66,22 +75,18 @@ export const getDaysBetween = (start: number): number => {
   );
 };
 
-const dayIn300 = (date: number): string => {
-  return moment(date).utc().add(300, "day");
-};
-
 export const Range: Record<string, number> = {
   "5d": 5,
-  "1m": getDaysBetween(findMonthsAgo(1)),
-  "3m": getDaysBetween(findMonthsAgo(3)),
-  "6m": getDaysBetween(findMonthsAgo(6)),
-  "ytd": findDayOfYear(),
-  "1y": getDaysBetween(findYearsAgo(1)),
-  "2y": getDaysBetween(findYearsAgo(2)),
-  "5y": getDaysBetween(findYearsAgo(5))
+  "1m": getDaysBetween(getDayOfMonthsAgo(1)),
+  "3m": getDaysBetween(getDayOfMonthsAgo(3)),
+  "6m": getDaysBetween(getDayOfMonthsAgo(6)),
+  "ytd": getDayOfYear(),
+  "1y": getDaysBetween(getDayOfYearsAgo(1)),
+  "2y": getDaysBetween(getDayOfYearsAgo(2)),
+  "5y": getDaysBetween(getDayOfYearsAgo(5))
 };
 
-export const loopFromStart = (startDate: number): string[] => {
+export const getDatesForLooping = (startDate: number): string[] => {
   const dates: string[] = [];
   let start = startDate;
   while (start < moment().utc().valueOf()) {
@@ -90,7 +95,7 @@ export const loopFromStart = (startDate: number): string[] => {
       start = moment(start).utc().add(1, "day").valueOf(); // no overlapping of ranges
       dates.push(formatDate(start));
     }
-    start = moment(dayIn300(start)).utc().valueOf();
+    start = moment(getFinalDayInRange(start)).utc().valueOf();
   }
   return dates;
 };

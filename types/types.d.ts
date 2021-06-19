@@ -1,4 +1,3 @@
-export declare const GL11: any;
 export declare type DataEntry = [number, number, number, number, number, number];
 export declare type DataPoint = {
     date: string;
@@ -8,5 +7,7 @@ export declare type ScreenPoint = {
     x: number;
     y: number;
 };
-export declare type Axis = [number, number, number, number];
+declare type BasicPoint = [number, number];
+export declare type Axes = [BasicPoint, BasicPoint, BasicPoint];
 export declare type Triplet = [number, number, number];
+export {};

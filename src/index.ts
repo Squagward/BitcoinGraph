@@ -2,44 +2,49 @@
 /// <reference lib="esnext" />
 
 // @ts-ignore
+import * as moment from "../../moment";
+// @ts-ignore
 import { request } from "../../requestV2";
 // @ts-ignore
-import * as moment from "../../moment";
-
-import { StartDates } from "./constants";
-import { BitcoinGraph } from "./graph";
-import { formatDate, loopFromStart, Range } from "./utils";
-import type { DataPoint, DataEntry } from "./types";
-// @ts-ignore
 import Settings from "../dist/settings";
+import { Mode, StartDates } from "./constants";
+import { BitcoinGraph } from "./graph";
+import type { DataEntry, DataPoint } from "./types";
+import { formatDate, getDatesForLooping, Range } from "./utils";
 
 const URI = Java.type("java.net.URI");
 const WebSocketClient = Java.type("org.java_websocket.client.WebSocketClient");
 
 let points: DataPoint[] = [];
-const graph = new BitcoinGraph(300, 300);
+const graph = new BitcoinGraph();
 
 register("command", () => Settings.openGUI()).setName("btc");
 
-register("renderOverlay", (e) => {
-  if (graph.mode === "HISTORICAL")
-    graph.draw(
-      `${entries[Settings.coinIndex][0]} - ${ranges[Settings.rangeIndex]}`
-    );
-  if (graph.mode === "LIVE")
-    graph.drawLive(`${entries[Settings.coinIndex][0]} - Live Price`);
+register("renderOverlay", () => {
+  switch (graph.mode) {
+    case Mode.HISTORICAL: {
+      graph.draw(
+        `${entries[Settings.coinIndex][0]} - ${ranges[Settings.rangeIndex]}`
+      );
+      break;
+    }
+    case Mode.LIVE: {
+      graph.drawLive(`${entries[Settings.coinIndex][0]} - Live Price`);
+      break;
+    }
+  }
 });
 
 const entries = Object.entries(StartDates);
 const today = formatDate(moment().utc().valueOf());
 const ranges = [...Object.keys(Range), "max"];
 
-register("step", (steps) => {
+register("step", () => {
   if (!Settings.clicked) return;
   Settings.clicked = false;
   points = [];
 
-  const times = loopFromStart(entries[Settings.coinIndex][1]);
+  const times = getDatesForLooping(entries[Settings.coinIndex][1]);
   const promises: DataEntry[][] = [];
 
   while (times.length) {
@@ -66,6 +71,7 @@ register("step", (steps) => {
     .then((datas) => {
       datas.forEach((res) => {
         for (let i = 0; i < res.length; i++) {
+          if (res[i] === null) continue;
           points.push({
             date: formatDate(res[i][0] * 1000),
             price: res[i][2]
@@ -73,9 +79,11 @@ register("step", (steps) => {
         }
       });
 
-      graph.setPlotPoints(points.sort((a, b) => a.date.localeCompare(b.date)));
-      graph.setGraphRange(ranges[Settings.rangeIndex]);
-      graph.open("HISTORICAL");
+      graph.getPointCollection.setPlotPoints(
+        points.sort((a, b) => a.date.localeCompare(b.date))
+      );
+      graph.getPointCollection.setGraphRange(ranges[Settings.rangeIndex]);
+      graph.open(Mode.HISTORICAL);
     })
     .catch((e: Error) => {
       Client.currentGui.close();
@@ -96,14 +104,15 @@ const mySocket = new JavaAdapter(
         date: moment(time).format("HH:mm:ss"),
         price: Number(price)
       });
-      graph.setPlotPoints(points);
-      graph.currentPlotPoints = points;
+      graph.getPointCollection.setPlotPoints(points);
+      graph.getPointCollection.currentPlotPoints = points;
     }
   },
   new URI("wss://ws-feed.pro.coinbase.com")
 );
 
 //TODO
+// refactor BitcoinGraph class into at least one more smaller class for the dragging etc.
 // add hud option w/ daily change tracking for live
 
 /*{
@@ -142,15 +151,15 @@ register("step", () => {
       ]
     })
   );
-  graph.open("LIVE");
+  graph.open(Mode.LIVE);
 });
 
-const guis: { previous: any; current: any } = {
+const guis: { previous: null | MCTGuiScreen; current: MCTGuiScreen } = {
   previous: null,
   current: Client.currentGui.get()
 };
 
-register("guiOpened", (e) => {
+register("guiOpened", () => {
   guis.previous = guis.current;
   guis.current = Client.currentGui.get();
 
