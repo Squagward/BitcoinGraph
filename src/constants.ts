@@ -18,7 +18,6 @@ export const Colors: Record<string, Triplet> = {
   GRAPH_BACKGROUND: [77, 77, 77].map((v) => v / 255) as Triplet
 };
 
-// max timestamps
 export const StartDates: Record<string, number> = {
   BTC: 1437350400000, // "2015-07-20"
   ETH: 1463529600000, // "2016-05-18"

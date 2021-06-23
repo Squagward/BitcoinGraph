@@ -1,5 +1,5 @@
 import { Colors, GL11, screenCenterY } from "./constants";
-import { PointCollection } from "./pointCollection";
+import { PointCollection } from "./pointcollection";
 import { addCommas, createList } from "./utils";
 const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 export class BitcoinGraph {
@@ -7,7 +7,7 @@ export class BitcoinGraph {
         this.pointCollection = new PointCollection();
         this.gui = new Gui();
         this.display = new Display()
-            .setRenderLoc(this.pointCollection.square.left - 10, screenCenterY)
+            .setRenderLoc(this.pointCollection.left - 10, screenCenterY)
             .setAlign(DisplayHandler.Align.RIGHT)
             .setBackground(DisplayHandler.Background.FULL)
             .setTextColor(Renderer.color(...Colors.TEXT))
@@ -16,9 +16,9 @@ export class BitcoinGraph {
         this.offsetX = 0;
         this.offsetY = 0;
         this.axes = [
-            [this.pointCollection.square.left, this.pointCollection.square.top],
-            [this.pointCollection.square.left, this.pointCollection.square.bottom],
-            [this.pointCollection.square.right, this.pointCollection.square.bottom]
+            [this.pointCollection.left, this.pointCollection.top],
+            [this.pointCollection.left, this.pointCollection.bottom],
+            [this.pointCollection.right, this.pointCollection.bottom]
         ];
         this.changedPos = true;
         this.changedMouse = true;
@@ -64,9 +64,6 @@ export class BitcoinGraph {
     get mode() {
         return this.pointCollection.mode;
     }
-    get getPointCollection() {
-        return this.pointCollection;
-    }
     resetTransforms() {
         this.offsetX = 0;
         this.offsetY = 0;
@@ -99,15 +96,15 @@ export class BitcoinGraph {
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
         GL11.glColor3d(...Colors.GRAPH_BACKGROUND);
         GL11.glBegin(GL11.GL_QUADS);
-        GL11.glVertex2d(this.pointCollection.square.left, this.pointCollection.square.top);
-        GL11.glVertex2d(this.pointCollection.square.left, this.pointCollection.square.bottom);
-        GL11.glVertex2d(this.pointCollection.square.right, this.pointCollection.square.bottom);
-        GL11.glVertex2d(this.pointCollection.square.right, this.pointCollection.square.top);
+        GL11.glVertex2d(this.pointCollection.left, this.pointCollection.top);
+        GL11.glVertex2d(this.pointCollection.left, this.pointCollection.bottom);
+        GL11.glVertex2d(this.pointCollection.right, this.pointCollection.bottom);
+        GL11.glVertex2d(this.pointCollection.right, this.pointCollection.top);
         GL11.glEnd();
         GL11.glPopMatrix();
     }
     drawLabels() {
-        if (this.dragging || !this.pointCollection.currentScreenPoints.length)
+        if (this.dragging || !this.pointCollection.currentPlotPoints.length)
             return;
         const { index } = this.closestPointToMouse();
         const { date, price } = this.pointCollection.currentPlotPoints[index];
@@ -123,10 +120,10 @@ export class BitcoinGraph {
         GL11.glScaled(this.zoom, this.zoom, this.zoom);
         GL11.glColor3d(...Colors.INTERSECT_LINES);
         GL11.glBegin(GL11.GL_LINES);
-        GL11.glVertex2d(this.pointCollection.square.left, y);
-        GL11.glVertex2d(this.pointCollection.square.right, y);
-        GL11.glVertex2d(x, this.pointCollection.square.top);
-        GL11.glVertex2d(x, this.pointCollection.square.bottom);
+        GL11.glVertex2d(this.pointCollection.left, y);
+        GL11.glVertex2d(this.pointCollection.right, y);
+        GL11.glVertex2d(x, this.pointCollection.top);
+        GL11.glVertex2d(x, this.pointCollection.bottom);
         GL11.glEnd();
         GL11.glPopMatrix();
     }
@@ -167,12 +164,12 @@ export class BitcoinGraph {
         GL11.glCallList(this.lineList);
     }
     drawOutOfBoundsBackground() {
-        Renderer.drawRect(Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS), this.pointCollection.square.left, this.pointCollection.square.top, this.pointCollection.square.width, this.pointCollection.square.height);
+        Renderer.drawRect(Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS), this.pointCollection.left, this.pointCollection.top, this.pointCollection.width, this.pointCollection.height);
     }
     enableScissor() {
         const sr = new ScaledResolution(Client.getMinecraft());
         const scaleFactor = sr.func_78325_e();
-        GL11.glScissor(this.pointCollection.square.left * scaleFactor, this.pointCollection.square.top * scaleFactor, this.pointCollection.square.width * scaleFactor, this.pointCollection.square.height * scaleFactor);
+        GL11.glScissor(this.pointCollection.left * scaleFactor, this.pointCollection.top * scaleFactor, this.pointCollection.width * scaleFactor, this.pointCollection.height * scaleFactor);
     }
     drawLive(text) {
         if (!this.gui.isOpen() || !this.pointCollection.currentPlotPoints.length) {

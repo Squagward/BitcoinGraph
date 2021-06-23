@@ -23,7 +23,7 @@ register("renderOverlay", () => {
 });
 const entries = Object.entries(StartDates);
 const today = formatDate(moment().utc().valueOf());
-const ranges = [...Object.keys(Range), "max"];
+const ranges = Object.keys(Range);
 register("step", () => {
     var _a, _b;
     if (!Settings.clicked)
@@ -50,17 +50,17 @@ register("step", () => {
     Promise.all(promises)
         .then((datas) => {
         datas.forEach((res) => {
-            for (let i = 0; i < res.length; i++) {
-                if (res[i] === null)
-                    continue;
+            let date;
+            let price;
+            for ([date, , price] of res) {
                 points.push({
-                    date: formatDate(res[i][0] * 1000),
-                    price: res[i][2]
+                    date: formatDate(date * 1000),
+                    price
                 });
             }
         });
-        graph.getPointCollection.setPlotPoints(points.sort((a, b) => a.date.localeCompare(b.date)));
-        graph.getPointCollection.setGraphRange(ranges[Settings.rangeIndex]);
+        graph.pointCollection.setPlotPoints(points.sort((a, b) => a.date.localeCompare(b.date)));
+        graph.pointCollection.setGraphRange(ranges[Settings.rangeIndex]);
         graph.open(0);
     })
         .catch((e) => {
@@ -78,8 +78,8 @@ const mySocket = new JavaAdapter(WebSocketClient, {
             date: moment(time).format("HH:mm:ss"),
             price: Number(price)
         });
-        graph.getPointCollection.setPlotPoints(points);
-        graph.getPointCollection.currentPlotPoints = points;
+        graph.pointCollection.setPlotPoints(points);
+        graph.pointCollection.setGraphRange("max");
     }
 }, new URI("wss://ws-feed.pro.coinbase.com"));
 register("step", () => {

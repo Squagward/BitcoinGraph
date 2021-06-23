@@ -1,5 +1,4 @@
 import { Mode } from "./constants";
-import { Square } from "./square";
 import type { DataPoint, ScreenPoint } from "./types";
 export declare class PointCollection {
     private totalDays;
@@ -9,8 +8,14 @@ export declare class PointCollection {
     currentPlotPoints: DataPoint[];
     currentScreenPoints: ScreenPoint[];
     mode: Mode;
-    readonly square: Square;
+    private readonly square;
     constructor();
+    get left(): number;
+    get right(): number;
+    get top(): number;
+    get bottom(): number;
+    get width(): number;
+    get height(): number;
     addPointsToScreen(): void;
     setPlotPoints(points: DataPoint[]): void;
     addPoint(point: DataPoint): void;

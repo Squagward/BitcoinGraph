@@ -83,7 +83,8 @@ export const Range: Record<string, number> = {
   "ytd": getDayOfYear(),
   "1y": getDaysBetween(getDayOfYearsAgo(1)),
   "2y": getDaysBetween(getDayOfYearsAgo(2)),
-  "5y": getDaysBetween(getDayOfYearsAgo(5))
+  "5y": getDaysBetween(getDayOfYearsAgo(5)),
+  "max": 0
 };
 
 export const getDatesForLooping = (startDate: number): string[] => {

@@ -14,7 +14,7 @@ export class PointCollection {
 
   public mode!: Mode;
 
-  public readonly square: Square;
+  private readonly square: Square;
 
   constructor() {
     this.totalDays = 0;
@@ -26,6 +26,30 @@ export class PointCollection {
     this.currentScreenPoints = [];
 
     this.square = new Square(GraphDimensions);
+  }
+
+  public get left() {
+    return this.square.left;
+  }
+
+  public get right() {
+    return this.square.right;
+  }
+
+  public get top() {
+    return this.square.top;
+  }
+
+  public get bottom() {
+    return this.square.bottom;
+  }
+
+  public get width() {
+    return this.square.width;
+  }
+
+  public get height() {
+    return this.square.height;
   }
 
   public addPointsToScreen(): void {
@@ -51,32 +75,22 @@ export class PointCollection {
   }
 
   public setGraphRange(type: string): void {
-    if (type.toLowerCase() === "max") {
-      this.currentPlotPoints = this.totalPlotPoints;
-    } else {
-      this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
-    }
+    this.currentPlotPoints = this.totalPlotPoints.slice(Range[-type]);
   }
 
   public priceToPoint(index: number, price: number) {
-    const x = MathLib.map(
-      index,
-      0,
-      this.totalDays,
-      this.square.left,
-      this.square.right
-    );
-    let y = this.square.bottom;
+    const x = MathLib.map(index, 0, this.totalDays, this.left, this.right);
+    let y = this.bottom;
 
     switch (this.mode) {
       case Mode.HISTORICAL: {
-        y -= (price / this.maxPrice) * this.square.height;
+        y -= (price / this.maxPrice) * this.height;
         break;
       }
       case Mode.LIVE: {
         y -=
           ((price - this.minPrice) / (this.maxPrice - this.minPrice || 1)) *
-          this.square.height;
+          this.height;
         break;
       }
     }

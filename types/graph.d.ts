@@ -1,7 +1,7 @@
 import { Mode } from "./constants";
-import { PointCollection } from "./pointCollection";
+import { PointCollection } from "./pointcollection";
 export declare class BitcoinGraph {
-    private pointCollection;
+    readonly pointCollection: PointCollection;
     private gui;
     private display;
     private zoom;
@@ -16,7 +16,6 @@ export declare class BitcoinGraph {
     private lineList;
     constructor();
     get mode(): Mode;
-    get getPointCollection(): PointCollection;
     private resetTransforms;
     private constrainMouseX;
     private closestPointToMouse;

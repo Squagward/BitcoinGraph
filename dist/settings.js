@@ -38,9 +38,9 @@ class Settings {
     name: "Price Range",
     description: "Select a price range",
     category: "General",
-    options: [...Object.keys(Range), "max"]
+    options: Object.keys(Range)
   })
-  rangeIndex = Object.keys(Range).length;
+  rangeIndex = Object.keys(Range).length - 1;
 
   clicked = false;
 
