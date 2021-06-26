@@ -1,2 +1,3 @@
 /// <reference lib="esnext" />
-export {};
+import "./sockets/graphdisplay";
+import "./sockets/huddisplay";

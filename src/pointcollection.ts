@@ -1,7 +1,7 @@
-import { GraphDimensions, Mode } from "./constants";
+import { GraphDimensions, Mode, Range } from "./constants";
 import { Square } from "./square";
 import type { DataPoint, ScreenPoint } from "./types";
-import { findBounds, Range } from "./utils";
+import { findBounds } from "./utils/index";
 
 export class PointCollection {
   private totalDays: number;
@@ -28,27 +28,27 @@ export class PointCollection {
     this.square = new Square(GraphDimensions);
   }
 
-  public get left() {
+  public get left(): number {
     return this.square.left;
   }
 
-  public get right() {
+  public get right(): number {
     return this.square.right;
   }
 
-  public get top() {
+  public get top(): number {
     return this.square.top;
   }
 
-  public get bottom() {
+  public get bottom(): number {
     return this.square.bottom;
   }
 
-  public get width() {
+  public get width(): number {
     return this.square.width;
   }
 
-  public get height() {
+  public get height(): number {
     return this.square.height;
   }
 
@@ -64,21 +64,11 @@ export class PointCollection {
     this.totalPlotPoints = points;
   }
 
-  public addPoint(point: DataPoint): void {
-    this.currentPlotPoints.push(point);
-
-    this.updateRanges();
-
-    this.currentScreenPoints.push(
-      this.priceToPoint(this.currentPlotPoints.length - 1, point.price)
-    );
-  }
-
   public setGraphRange(type: string): void {
-    this.currentPlotPoints = this.totalPlotPoints.slice(Range[-type]);
+    this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
   }
 
-  public priceToPoint(index: number, price: number) {
+  public priceToPoint(index: number, price: number): ScreenPoint {
     const x = MathLib.map(index, 0, this.totalDays, this.left, this.right);
     let y = this.bottom;
 
@@ -88,9 +78,10 @@ export class PointCollection {
         break;
       }
       case Mode.LIVE: {
-        y -=
-          ((price - this.minPrice) / (this.maxPrice - this.minPrice || 1)) *
-          this.height;
+        const priceRange = this.maxPrice - this.minPrice;
+        const denominator = priceRange || 1;
+
+        y -= ((price - this.minPrice) / denominator) * this.height;
         break;
       }
     }

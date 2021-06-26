@@ -1,9 +1,10 @@
 import {
   @ButtonProperty,
   @SelectorProperty,
+  @SwitchProperty,
   @Vigilant
 } from "../../Vigilance";
-import { Range } from "./utils";
+import { liveGui, Range } from "./constants";
 
 @Vigilant("BitcoinGraph")
 class Settings {
@@ -66,12 +67,46 @@ class Settings {
     this.liveFeed = true;
   }
 
+  @SwitchProperty({
+    name: "Toggle Daily % Change Display",
+    description: "Click to toggle the daily info display",
+    category: "Live Display",
+  })
+  toggleDailyDisplay = false;
+
+  sendDisplayRequest = false;
+
+  @ButtonProperty({
+    name: "Start Daily % Change Display",
+    description: "Click to start daily data display",
+    category: "Live Display",
+    placeholder: "Request"
+  })
+  toggleTheDisplay() {
+    if (!this.toggleDailyDisplay) return;
+    this.sendDisplayRequest = true;
+  }
+
+  @ButtonProperty({
+    name: "Move Daily % Change Display",
+    description: "Click to move the display",
+    category: "Live Display"
+  })
+  openDraggableGui() {
+    if (!this.toggleDailyDisplay) return;
+    liveGui.open();
+  }
+
   constructor() {
     this.initialize(this);
     this.setCategoryDescription(
       "General",
       "Note: Some of these cryptocurrencies don't have much historical data on CoinBase Pro."
     );
+    this.setCategoryDescription(
+      "Live Display",
+      "Options for the live display HUD"
+    )
   }
 }
 

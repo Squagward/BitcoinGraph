@@ -2,12 +2,10 @@ import { Mode } from "./constants";
 import { PointCollection } from "./pointcollection";
 export declare class BitcoinGraph {
     readonly pointCollection: PointCollection;
-    private gui;
-    private display;
-    private zoom;
-    private offsetX;
-    private offsetY;
-    private axes;
+    private readonly zoomHandler;
+    private readonly gui;
+    private readonly display;
+    private readonly axes;
     private changedPos;
     private changedMouse;
     private clicked;
@@ -15,9 +13,7 @@ export declare class BitcoinGraph {
     private pointList;
     private lineList;
     constructor();
-    get mode(): Mode;
     private resetTransforms;
-    private constrainMouseX;
     private closestPointToMouse;
     private shadeGraphBackground;
     private drawLabels;
@@ -25,7 +21,7 @@ export declare class BitcoinGraph {
     private drawPoints;
     draw(text: string): void;
     private drawOutOfBoundsBackground;
-    private enableScissor;
+    private setupScissor;
     drawLive(text: string): void;
     open(mode: Mode): void;
 }

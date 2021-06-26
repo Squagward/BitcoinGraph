@@ -18,11 +18,7 @@ export declare class PointCollection {
     get height(): number;
     addPointsToScreen(): void;
     setPlotPoints(points: DataPoint[]): void;
-    addPoint(point: DataPoint): void;
     setGraphRange(type: string): void;
-    priceToPoint(index: number, price: number): {
-        x: number;
-        y: number;
-    };
+    priceToPoint(index: number, price: number): ScreenPoint;
     updateRanges(): void;
 }

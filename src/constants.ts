@@ -1,6 +1,24 @@
+// @ts-ignore
+import PogObject from "PogData";
 import type { Triplet } from "./types";
+import {
+  getDayOfMonthsAgo,
+  getDayOfYear,
+  getDayOfYearsAgo,
+  getDaysBetween
+} from "./utils/dates";
 
 export const GL11 = Java.type("org.lwjgl.opengl.GL11");
+
+export const ScaledResolution = Java.type(
+  "net.minecraft.client.gui.ScaledResolution"
+);
+
+export const URI = Java.type("java.net.URI") as any;
+
+export const WebSocketClient = Java.type(
+  "org.java_websocket.client.WebSocketClient"
+);
 
 export const GraphDimensions = { width: 300, height: 300 };
 
@@ -43,3 +61,26 @@ export const enum Mode {
   HISTORICAL,
   LIVE
 }
+
+export const Range: Record<string, number> = {
+  "5d": 5,
+  "1m": getDaysBetween(getDayOfMonthsAgo(1)),
+  "3m": getDaysBetween(getDayOfMonthsAgo(3)),
+  "6m": getDaysBetween(getDayOfMonthsAgo(6)),
+  "ytd": getDayOfYear(),
+  "1y": getDaysBetween(getDayOfYearsAgo(1)),
+  "2y": getDaysBetween(getDayOfYearsAgo(2)),
+  "5y": getDaysBetween(getDayOfYearsAgo(5)),
+  "max": 0
+};
+
+export const entries = Object.entries(StartDates);
+
+export const data = new PogObject("BitcoinGraph", { x: 0, y: 0 });
+data.autosave();
+
+export const liveGui = new Gui();
+
+export const liveDisplay = new Display()
+  .setRenderLoc(data.x, data.y)
+  .setBackground(DisplayHandler.Background.FULL);

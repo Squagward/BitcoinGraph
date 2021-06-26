@@ -1,6 +1,6 @@
-import { GraphDimensions } from "./constants";
+import { GraphDimensions, Range } from "./constants";
 import { Square } from "./square";
-import { findBounds, Range } from "./utils";
+import { findBounds } from "./utils/index";
 export class PointCollection {
     constructor() {
         this.totalDays = 0;
@@ -38,13 +38,8 @@ export class PointCollection {
     setPlotPoints(points) {
         this.totalPlotPoints = points;
     }
-    addPoint(point) {
-        this.currentPlotPoints.push(point);
-        this.updateRanges();
-        this.currentScreenPoints.push(this.priceToPoint(this.currentPlotPoints.length - 1, point.price));
-    }
     setGraphRange(type) {
-        this.currentPlotPoints = this.totalPlotPoints.slice(Range[-type]);
+        this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
     }
     priceToPoint(index, price) {
         const x = MathLib.map(index, 0, this.totalDays, this.left, this.right);
@@ -55,9 +50,9 @@ export class PointCollection {
                 break;
             }
             case 1: {
-                y -=
-                    ((price - this.minPrice) / (this.maxPrice - this.minPrice || 1)) *
-                        this.height;
+                const priceRange = this.maxPrice - this.minPrice;
+                const denominator = priceRange || 1;
+                y -= ((price - this.minPrice) / denominator) * this.height;
                 break;
             }
         }
