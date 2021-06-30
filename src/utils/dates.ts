@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as moment from "moment";
+import * as moment from "../../../moment";
 
 export const getDayOfYear = (): number => moment().utc().dayOfYear();
 

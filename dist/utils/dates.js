@@ -1,4 +1,4 @@
-import * as moment from "moment";
+import * as moment from "../../../moment";
 export const getDayOfYear = () => moment().utc().dayOfYear();
 export const getDayOfMonthsAgo = (months) => {
     return moment().utc().startOf("day").subtract(months, "month");

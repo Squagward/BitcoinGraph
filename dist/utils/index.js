@@ -1,4 +1,4 @@
-import * as moment from "moment";
+import * as moment from "../../../moment";
 import { GL11 } from "../constants";
 import { getFinalDayInRange } from "./dates";
 import { formatDate } from "./format";

@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as moment from "moment";
+import * as moment from "../../../moment";
 import { GL11 } from "../constants";
 import type { DataPoint } from "../types";
 import { getFinalDayInRange } from "./dates";

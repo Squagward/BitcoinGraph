@@ -1,10 +1,10 @@
 // @ts-ignore
-import { request } from "requestV2";
+import { request } from "../../../requestV2";
 // @ts-ignore
 import Settings from "../../dist/settings";
-import { Mode, entries, WebSocketClient, URI, Range } from "../constants";
+import { entries, Mode, Range, URI, WebSocketClient } from "../constants";
 import { BitcoinGraph } from "../graph";
-import { DataPoint, DataEntry, WebSocketData } from "../types";
+import type { DataEntry, DataPoint, WebSocketData } from "../types";
 import { formatDate } from "../utils/format";
 import { getDatesForLooping } from "../utils/index";
 

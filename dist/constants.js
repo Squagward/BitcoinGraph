@@ -1,4 +1,4 @@
-import PogObject from "PogData";
+import PogObject from "../../PogData";
 import { getDayOfMonthsAgo, getDayOfYear, getDayOfYearsAgo, getDaysBetween } from "./utils/dates";
 export const GL11 = Java.type("org.lwjgl.opengl.GL11");
 export const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");

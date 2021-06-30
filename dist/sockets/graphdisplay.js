@@ -1,6 +1,6 @@
-import { request } from "requestV2";
+import { request } from "../../../requestV2";
 import Settings from "../../dist/settings";
-import { entries, WebSocketClient, URI, Range } from "../constants";
+import { entries, Range, URI, WebSocketClient } from "../constants";
 import { BitcoinGraph } from "../graph";
 import { formatDate } from "../utils/format";
 import { getDatesForLooping } from "../utils/index";

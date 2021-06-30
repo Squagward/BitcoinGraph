@@ -1,5 +1,5 @@
 // @ts-ignore
-import PogObject from "PogData";
+import PogObject from "../../PogData";
 import type { Triplet } from "./types";
 import {
   getDayOfMonthsAgo,
