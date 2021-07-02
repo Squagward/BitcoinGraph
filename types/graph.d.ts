@@ -19,6 +19,7 @@ export declare class BitcoinGraph {
     private drawLabels;
     private drawIntersectLines;
     private drawPoints;
+    private drawAxes;
     draw(text: string): void;
     private drawOutOfBoundsBackground;
     private setupScissor;

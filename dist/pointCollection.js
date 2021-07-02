@@ -1,4 +1,4 @@
-import { GraphDimensions, Range } from "./constants";
+import { Range } from "./constants";
 import { Square } from "./square";
 import { findBounds } from "./utils/index";
 export class PointCollection {
@@ -9,7 +9,10 @@ export class PointCollection {
         this.totalPlotPoints = [];
         this.currentPlotPoints = [];
         this.currentScreenPoints = [];
-        this.square = new Square(GraphDimensions);
+        const width = Renderer.screen.getWidth();
+        const height = Renderer.screen.getHeight();
+        const dimension = width > height ? height - 34 : width - 34;
+        this.square = new Square(dimension, dimension);
     }
     get left() {
         return this.square.left;

@@ -1,10 +1,4 @@
-import {
-  Colors,
-  GL11,
-  Mode,
-  ScaledResolution,
-  screenCenterY
-} from "./constants";
+import { Colors, GL11, Mode, ScaledResolution } from "./constants";
 import { PointCollection } from "./pointcollection";
 import type { Axes } from "./types";
 import { addCommas } from "./utils/format";
@@ -36,7 +30,10 @@ export class BitcoinGraph {
     this.gui = new Gui();
 
     this.display = new Display()
-      .setRenderLoc(this.pointCollection.left - 10, screenCenterY)
+      .setRenderLoc(
+        this.pointCollection.left - 10,
+        Renderer.screen.getHeight() / 2
+      )
       .setAlign(DisplayHandler.Align.RIGHT)
       .setBackground(DisplayHandler.Background.FULL)
       .setTextColor(Renderer.color(...Colors.TEXT))
@@ -58,6 +55,7 @@ export class BitcoinGraph {
     this.shadeGraphBackground = this.shadeGraphBackground.bind(this);
     this.drawIntersectLines = this.drawIntersectLines.bind(this);
     this.drawPoints = this.drawPoints.bind(this);
+    this.drawAxes = this.drawAxes.bind(this);
 
     this.gui.registerScrolled((mx, my, dir) => {
       this.zoomHandler.zoomFunc(mx, my, dir);
@@ -77,10 +75,12 @@ export class BitcoinGraph {
     }).setFps(20);
 
     register("guiMouseClick", () => {
+      if (!this.gui.isOpen()) return;
       this.clicked = true;
     });
 
     register("guiMouseRelease", () => {
+      if (!this.gui.isOpen()) return;
       this.clicked = false;
       this.dragging = false;
     });
@@ -144,7 +144,7 @@ export class BitcoinGraph {
     const { index } = this.closestPointToMouse();
 
     const { date, price } = this.pointCollection.currentPlotPoints[index];
-    this.display.setLine(1, date).setLine(2, addCommas(price));
+    this.display.setLine(1, date).setLine(2, `$${addCommas(price)}`);
   }
 
   private drawIntersectLines(): void {
@@ -179,13 +179,19 @@ export class BitcoinGraph {
       GL11.glVertex2d(x, y);
     });
     GL11.glEnd();
+    GL11.glPopMatrix();
+  }
 
+  private drawAxes(): void {
+    GL11.glPushMatrix();
     GL11.glLineWidth(2);
+    this.zoomHandler.translateAndScale();
+
     GL11.glColor3d(...Colors.AXES);
     GL11.glBegin(GL11.GL_LINE_STRIP);
     this.axes.forEach(([x, y]) => GL11.glVertex2d(x, y));
-    GL11.glEnd();
 
+    GL11.glEnd();
     GL11.glPopMatrix();
   }
 
@@ -210,6 +216,7 @@ export class BitcoinGraph {
       this.changedPos,
       this.pointList,
       this.shadeGraphBackground,
+      this.drawAxes,
       this.drawPoints
     );
     this.changedPos = changedPos;

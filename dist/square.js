@@ -1,6 +1,7 @@
-import { screenCenterX, screenCenterY } from "./constants";
 export class Square {
-    constructor({ width, height }) {
+    constructor(width, height) {
+        const screenCenterX = Renderer.screen.getWidth() / 2;
+        const screenCenterY = Renderer.screen.getHeight() / 2;
         this.width = width;
         this.height = height;
         this.left = screenCenterX - width / 2;

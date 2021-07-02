@@ -94,7 +94,7 @@ register("step", () => {
         ]
     }));
     graph.open(1);
-});
+}).setFps(2);
 const guis = {
     previous: null,
     current: Client.currentGui.get()
@@ -107,4 +107,3 @@ register("guiOpened", () => {
     }
 });
 graphSocket.connectBlocking();
-graphSocket.closeBlocking();

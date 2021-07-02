@@ -1,5 +1,3 @@
-import { screenCenterX, screenCenterY } from "./constants";
-
 export class Square {
   public readonly left: number;
   public readonly right: number;
@@ -9,7 +7,10 @@ export class Square {
   public readonly width: number;
   public readonly height: number;
 
-  constructor({ width, height }: { width: number; height: number }) {
+  constructor(width: number, height: number) {
+    const screenCenterX = Renderer.screen.getWidth() / 2;
+    const screenCenterY = Renderer.screen.getHeight() / 2;
+
     this.width = width;
     this.height = height;
 

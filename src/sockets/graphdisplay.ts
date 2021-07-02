@@ -119,9 +119,9 @@ register("step", () => {
     })
   );
   graph.open(Mode.LIVE);
-});
+}).setFps(2);
 
-const guis: any = {
+const guis: Record<string, MCTGuiScreen | null> = {
   previous: null,
   current: Client.currentGui.get()
 };
@@ -136,4 +136,3 @@ register("guiOpened", () => {
 });
 
 graphSocket.connectBlocking();
-graphSocket.closeBlocking();

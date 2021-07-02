@@ -4,9 +4,6 @@ export const GL11 = Java.type("org.lwjgl.opengl.GL11");
 export const ScaledResolution = Java.type("net.minecraft.client.gui.ScaledResolution");
 export const URI = Java.type("java.net.URI");
 export const WebSocketClient = Java.type("org.java_websocket.client.WebSocketClient");
-export const GraphDimensions = { width: 300, height: 300 };
-export const screenCenterX = Renderer.screen.getWidth() / 2;
-export const screenCenterY = Renderer.screen.getHeight() / 2;
 export const Colors = {
     TEXT: [214, 200, 49],
     TEXT_BACKGROUND: [77, 77, 77],

@@ -5,8 +5,5 @@ export declare class Square {
     readonly bottom: number;
     readonly width: number;
     readonly height: number;
-    constructor({ width, height }: {
-        width: number;
-        height: number;
-    });
+    constructor(width: number, height: number);
 }

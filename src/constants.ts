@@ -20,12 +20,6 @@ export const WebSocketClient = Java.type(
   "org.java_websocket.client.WebSocketClient"
 );
 
-export const GraphDimensions = { width: 300, height: 300 };
-
-export const screenCenterX = Renderer.screen.getWidth() / 2;
-
-export const screenCenterY = Renderer.screen.getHeight() / 2;
-
 export const Colors: Record<string, Triplet> = {
   TEXT: [214, 200, 49] as Triplet,
   TEXT_BACKGROUND: [77, 77, 77] as Triplet,
