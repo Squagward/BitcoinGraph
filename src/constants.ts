@@ -1,13 +1,3 @@
-import {
-  AdditiveConstraint,
-  ChildBasedMaxSizeConstraint,
-  ChildBasedSizeConstraint,
-  ConstantColorConstraint,
-  PixelConstraint,
-  UIContainer,
-  UIRoundedRectangle,
-  Window
-} from "../../Elementa/index";
 // @ts-ignore
 import PogObject from "../../PogData";
 import {
@@ -29,10 +19,9 @@ export const WebSocketClient = Java.type(
   "org.java_websocket.client.WebSocketClient"
 );
 
-const Color = Java.type("java.awt.Color");
+export const Color = Java.type("java.awt.Color");
 
 export const Colors = {
-  TEXT_BACKGROUND: [51, 51, 51],
   GRAPH_OUT_OF_BOUNDS: [76, 76, 76],
   AXES: [0.92, 0.25, 0.2],
   POINTS: [0.2, 0.66, 0.92],
@@ -84,29 +73,3 @@ export const data = new PogObject("BitcoinGraph", { x: 0, y: 0 });
 data.autosave();
 
 export const liveGui = new Gui();
-
-export const liveDisplayBackground = new UIRoundedRectangle(5)
-  .setX(new PixelConstraint(0))
-  .setY(new PixelConstraint(0))
-  .setColor(new ConstantColorConstraint(new Color(0.2, 0.2, 0.2, 0.5)))
-  .setWidth(
-    new AdditiveConstraint(
-      new ChildBasedMaxSizeConstraint(),
-      new PixelConstraint(10)
-    )
-  )
-  .setHeight(
-    new AdditiveConstraint(
-      new ChildBasedSizeConstraint(),
-      new PixelConstraint(10)
-    )
-  );
-
-export const liveDisplayContainer = new UIContainer()
-  .addChild(liveDisplayBackground)
-  .setX(new PixelConstraint(data.x))
-  .setY(new PixelConstraint(data.y))
-  .setWidth(new ChildBasedMaxSizeConstraint())
-  .setHeight(new ChildBasedSizeConstraint());
-
-export const window = new Window().addChild(liveDisplayContainer);

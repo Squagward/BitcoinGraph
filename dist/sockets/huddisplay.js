@@ -1,8 +1,9 @@
 import { CenterConstraint, PixelConstraint, UIText } from "../../../Elementa/index";
 import Settings from "../../dist/settings";
-import { data, entries, liveDisplayBackground, liveDisplayContainer, liveGui, URI, WebSocketClient, window } from "../constants";
+import { data, entries, liveGui, URI, WebSocketClient } from "../constants";
 import { addCommas, findDecimalPlaces, formatTime } from "../utils/format";
-import { createEmptyChildren, getPriceChangeColor } from "../utils/index";
+import { createBasicDisplay, createEmptyChildren, getPriceChangeColor } from "../utils/index";
+const { window, container, background } = createBasicDisplay(data.x, data.y);
 const lines = createEmptyChildren(9);
 const title = new UIText("")
     .setX(new CenterConstraint())
@@ -31,28 +32,28 @@ const displaySocket = new JavaAdapter(WebSocketClient, {
     }
 }, new URI("wss://ws-feed.pro.coinbase.com"));
 const setLines = () => {
-    liveDisplayBackground.clearChildren();
+    background.clearChildren();
     if (!subscribed && !liveGui.isOpen())
         return;
-    liveDisplayBackground.addChild(title);
+    background.addChild(title);
     if (Settings.togglePrice)
-        liveDisplayBackground.addChild(lines[0]);
+        background.addChild(lines[0]);
     if (Settings.toggleOpen)
-        liveDisplayBackground.addChild(lines[1]);
+        background.addChild(lines[1]);
     if (Settings.toggleVolume24h)
-        liveDisplayBackground.addChild(lines[2]);
+        background.addChild(lines[2]);
     if (Settings.toggleLow24h)
-        liveDisplayBackground.addChild(lines[3]);
+        background.addChild(lines[3]);
     if (Settings.toggleHigh24h)
-        liveDisplayBackground.addChild(lines[4]);
+        background.addChild(lines[4]);
     if (Settings.toggleChange24h)
-        liveDisplayBackground.addChild(lines[5]);
+        background.addChild(lines[5]);
     if (Settings.toggleVolume30d)
-        liveDisplayBackground.addChild(lines[6]);
+        background.addChild(lines[6]);
     if (Settings.toggleTime)
-        liveDisplayBackground.addChild(lines[7]);
+        background.addChild(lines[7]);
     if (Settings.toggleLastSize)
-        liveDisplayBackground.addChild(lines[8]);
+        background.addChild(lines[8]);
 };
 register("step", () => {
     if (liveGui.isOpen()) {
@@ -92,7 +93,7 @@ register("messageSent", (msg) => {
     }
 });
 register("renderOverlay", () => {
-    if (liveDisplayBackground.children.length === 0)
+    if (background.children.length === 0)
         return;
     window.draw();
 });
@@ -101,8 +102,6 @@ register("dragged", (dx, dy) => {
         return;
     data.x += dx;
     data.y += dy;
-    liveDisplayContainer
-        .setX(new PixelConstraint(data.x))
-        .setY(new PixelConstraint(data.y));
+    container.setX(new PixelConstraint(data.x)).setY(new PixelConstraint(data.y));
 });
 displaySocket.connectBlocking();

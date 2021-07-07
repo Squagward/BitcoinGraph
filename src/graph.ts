@@ -1,8 +1,17 @@
+import {
+  CenterConstraint,
+  PixelConstraint,
+  SiblingConstraint,
+  UIContainer,
+  UIRoundedRectangle,
+  UIText,
+  Window
+} from "../../Elementa/index";
 import { Colors, GL11, Mode, ScaledResolution } from "./constants";
 import { PointCollection } from "./pointcollection";
 import type { Axes } from "./types";
 import { addCommas } from "./utils/format";
-import { createList } from "./utils/index";
+import { createBasicDisplay, createList } from "./utils/index";
 import { ZoomHandler } from "./zoomhandler";
 
 export class BitcoinGraph {
@@ -10,7 +19,10 @@ export class BitcoinGraph {
   private readonly zoomHandler: ZoomHandler;
 
   private readonly gui: Gui;
-  private readonly display: Display;
+
+  private readonly textBackground: UIRoundedRectangle;
+  private readonly textContainer: UIContainer;
+  private readonly window: Window;
 
   private readonly axes: Axes;
 
@@ -23,20 +35,22 @@ export class BitcoinGraph {
   private pointList!: number;
   private lineList!: number;
 
+  private currentCoin!: string;
   constructor() {
     this.pointCollection = new PointCollection();
     this.zoomHandler = new ZoomHandler();
 
     this.gui = new Gui();
 
-    this.display = new Display()
-      .setRenderLoc(
-        this.pointCollection.left - 10,
-        Renderer.screen.getHeight() / 2
-      )
-      .setAlign(DisplayHandler.Align.RIGHT)
-      .setBackground(DisplayHandler.Background.FULL)
-      .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND, 200));
+    const { window, container, background } = createBasicDisplay(
+      this.pointCollection.right + 10,
+      "center",
+      true
+    );
+    // @ts-ignore
+    this.window = window;
+    this.textContainer = container;
+    this.textBackground = background;
 
     this.axes = [
       [this.pointCollection.left, this.pointCollection.top],
@@ -70,7 +84,7 @@ export class BitcoinGraph {
       )
         return;
       this.changedMouse = true;
-      this.drawLabels();
+      this.drawLabels(this.currentCoin);
     }).setFps(20);
 
     register("guiMouseClick", () => {
@@ -91,6 +105,11 @@ export class BitcoinGraph {
       this.changedPos = true;
       this.changedMouse = true;
       if (this.clicked) this.dragging = true;
+    });
+
+    register("renderOverlay", () => {
+      if (!this.gui.isOpen()) return;
+      this.window.draw();
     });
   }
 
@@ -137,13 +156,25 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  private drawLabels(): void {
+  private drawLabels(text: string): void {
     if (this.dragging || this.pointCollection.currentPlotPoints.length === 0)
       return;
     const { index } = this.closestPointToMouse();
 
     const { date, price } = this.pointCollection.currentPlotPoints[index];
-    this.display.setLine(1, date).setLine(2, `$${addCommas(price)}`);
+    this.textBackground
+      .clearChildren()
+      .addChildren(
+        new UIText(`§l${text}`)
+          .setX(new CenterConstraint())
+          .setY(new PixelConstraint(5)),
+        new UIText(date)
+          .setX(new PixelConstraint(5, true))
+          .setY(new SiblingConstraint()),
+        new UIText(`$${addCommas(price)}`)
+          .setX(new PixelConstraint(5, true))
+          .setY(new SiblingConstraint())
+      );
   }
 
   private drawIntersectLines(): void {
@@ -216,18 +247,13 @@ export class BitcoinGraph {
     );
   }
 
-  private beginDraw(text: string): boolean {
+  private beginDraw(): boolean {
     if (
       !this.gui.isOpen() ||
       this.pointCollection.currentPlotPoints.length === 0
     ) {
-      if (this.display.getLines().length > 0) this.display.clearLines();
       return false;
     }
-    this.display.setLine(
-      0,
-      new DisplayLine(`§l${text}`).setAlign(DisplayHandler.Align.CENTER)
-    );
 
     this.drawOutOfBoundsBackground();
     this.setupScissor();
@@ -235,7 +261,8 @@ export class BitcoinGraph {
   }
 
   public draw(text: string): void {
-    if (!this.beginDraw(text)) return;
+    if (!this.beginDraw()) return;
+    this.currentCoin = text;
 
     const { changedVar: changedPos, list: pointList } = createList(
       this.changedPos,
@@ -260,7 +287,8 @@ export class BitcoinGraph {
   }
 
   public drawLive(text: string): void {
-    if (!this.beginDraw(text)) return;
+    if (!this.beginDraw()) return;
+    this.currentCoin = text;
 
     GL11.glDisable(GL11.GL_TEXTURE_2D);
     GL11.glEnable(GL11.GL_SCISSOR_TEST);

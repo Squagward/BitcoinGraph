@@ -1,11 +1,19 @@
 import {
+  AdditiveConstraint,
+  CenterConstraint,
+  ChildBasedMaxSizeConstraint,
+  ChildBasedSizeConstraint,
+  ConstantColorConstraint,
   PixelConstraint,
   SiblingConstraint,
-  UIText
+  UIContainer,
+  UIRoundedRectangle,
+  UIText,
+  Window
 } from "../../../Elementa/index";
 // @ts-ignore
 import * as moment from "../../../moment";
-import { GL11 } from "../constants";
+import { Color, GL11 } from "../constants";
 import type { DataPoint } from "../types";
 import { getFinalDayInRange } from "./dates";
 import { formatDate } from "./format";
@@ -89,4 +97,47 @@ export const getPriceChangeColor = (
   if (currentPrice < lastPrice) return "§c";
   if (currentPrice > lastPrice) return "§a";
   return "";
+};
+
+export const createBasicDisplay = (
+  x: number,
+  y: number | "center",
+  opposite = false
+) => {
+  const liveDisplayBackground = new UIRoundedRectangle(5)
+    .setX(new PixelConstraint(0))
+    .setY(new PixelConstraint(0))
+    .setColor(new ConstantColorConstraint(new Color(0.2, 0.2, 0.2, 0.8)))
+    .setWidth(
+      new AdditiveConstraint(
+        new ChildBasedMaxSizeConstraint(),
+        new PixelConstraint(10)
+      )
+    )
+    .setHeight(
+      new AdditiveConstraint(
+        new ChildBasedSizeConstraint(),
+        new PixelConstraint(10)
+      )
+    );
+
+  const liveDisplayContainer = new UIContainer()
+    .addChild(liveDisplayBackground)
+    .setX(new PixelConstraint(x, opposite))
+    .setWidth(new ChildBasedMaxSizeConstraint())
+    .setHeight(new ChildBasedSizeConstraint());
+
+  if (y === "center") {
+    liveDisplayContainer.setY(new CenterConstraint());
+  } else {
+    liveDisplayContainer.setY(new PixelConstraint(y, opposite));
+  }
+
+  const window = new Window().addChild(liveDisplayContainer);
+
+  return {
+    window,
+    container: liveDisplayContainer,
+    background: liveDisplayBackground
+  };
 };
