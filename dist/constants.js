@@ -7,13 +7,12 @@ export const URI = Java.type("java.net.URI");
 export const WebSocketClient = Java.type("org.java_websocket.client.WebSocketClient");
 const Color = Java.type("java.awt.Color");
 export const Colors = {
-    TEXT: [214, 200, 49],
-    TEXT_BACKGROUND: [77, 77, 77],
-    GRAPH_OUT_OF_BOUNDS: [100, 100, 100],
-    AXES: [235, 64, 52].map((v) => v / 255),
-    POINTS: [52, 168, 235].map((v) => v / 255),
-    INTERSECT_LINES: [52, 235, 101].map((v) => v / 255),
-    GRAPH_BACKGROUND: [77, 77, 77].map((v) => v / 255)
+    TEXT_BACKGROUND: [51, 51, 51],
+    GRAPH_OUT_OF_BOUNDS: [76, 76, 76],
+    AXES: [0.92, 0.25, 0.2],
+    POINTS: [0.2, 0.66, 0.92],
+    INTERSECT_LINES: [0.2, 0.92, 0.4],
+    GRAPH_BACKGROUND: [0.2, 0.2, 0.2]
 };
 export const StartDates = {
     BTC: 1437350400000,

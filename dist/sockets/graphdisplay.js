@@ -56,7 +56,7 @@ register("step", () => {
             }
         });
         graph.pointCollection.setPlotPoints(points.sort((a, b) => a.date.localeCompare(b.date)));
-        graph.pointCollection.setGraphRange(ranges[Settings.rangeIndex]);
+        graph.pointCollection.setGraphRange(Range[ranges[Settings.rangeIndex]]);
         graph.open(0);
     })
         .catch((e) => {
@@ -68,14 +68,14 @@ register("step", () => {
 const graphSocket = new JavaAdapter(WebSocketClient, {
     onMessage(message) {
         const { time, price } = JSON.parse(message);
-        if (time === undefined)
+        if (time === undefined || price === undefined)
             return;
         points.push({
             date: formatTime(time),
             price: Number(price)
         });
         graph.pointCollection.setPlotPoints(points);
-        graph.pointCollection.setGraphRange("max");
+        graph.pointCollection.setGraphRange(Range.max);
     }
 }, new URI("wss://ws-feed.pro.coinbase.com"));
 register("step", () => {
@@ -83,7 +83,6 @@ register("step", () => {
         return;
     Settings.liveFeed = false;
     points = [];
-    graphSocket.reconnectBlocking();
     graphSocket.send(JSON.stringify({
         type: "subscribe",
         channels: [
@@ -95,15 +94,12 @@ register("step", () => {
     }));
     graph.open(1);
 }).setFps(2);
-const guis = {
-    previous: null,
-    current: Client.currentGui.get()
-};
-register("guiOpened", () => {
-    guis.previous = guis.current;
-    guis.current = Client.currentGui.get();
-    if (guis.current === null && guis.previous instanceof Gui) {
-        graphSocket.closeBlocking();
+register("messageSent", (msg) => {
+    if (msg.toLowerCase().startsWith("/btc")) {
+        graphSocket.send(JSON.stringify({
+            type: "unsubscribe",
+            channels: ["ticker"]
+        }));
     }
 });
 graphSocket.connectBlocking();

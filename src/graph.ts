@@ -36,8 +36,7 @@ export class BitcoinGraph {
       )
       .setAlign(DisplayHandler.Align.RIGHT)
       .setBackground(DisplayHandler.Background.FULL)
-      .setTextColor(Renderer.color(...Colors.TEXT))
-      .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND));
+      .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND, 200));
 
     this.axes = [
       [this.pointCollection.left, this.pointCollection.top],
@@ -195,22 +194,48 @@ export class BitcoinGraph {
     GL11.glPopMatrix();
   }
 
-  public draw(text: string): void {
+  private drawOutOfBoundsBackground(): void {
+    Renderer.drawRect(
+      Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS),
+      this.pointCollection.left,
+      this.pointCollection.top,
+      this.pointCollection.width,
+      this.pointCollection.height
+    );
+  }
+
+  private setupScissor(): void {
+    const sr = new ScaledResolution(Client.getMinecraft());
+    const scaleFactor = sr.func_78325_e(); // getScaleFactor
+
+    GL11.glScissor(
+      this.pointCollection.left * scaleFactor,
+      this.pointCollection.top * scaleFactor,
+      this.pointCollection.width * scaleFactor,
+      this.pointCollection.height * scaleFactor
+    );
+  }
+
+  private beginDraw(text: string): boolean {
     if (
       !this.gui.isOpen() ||
       this.pointCollection.currentPlotPoints.length === 0
     ) {
       if (this.display.getLines().length > 0) this.display.clearLines();
-      return;
+      return false;
     }
     this.display.setLine(
       0,
       new DisplayLine(`§l${text}`).setAlign(DisplayHandler.Align.CENTER)
     );
 
-    this.setupScissor();
-
     this.drawOutOfBoundsBackground();
+    this.setupScissor();
+    return true;
+  }
+
+  public draw(text: string): void {
+    if (!this.beginDraw(text)) return;
 
     const { changedVar: changedPos, list: pointList } = createList(
       this.changedPos,
@@ -234,44 +259,8 @@ export class BitcoinGraph {
     GL11.glCallList(this.lineList);
   }
 
-  private drawOutOfBoundsBackground(): void {
-    Renderer.drawRect(
-      Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS),
-      this.pointCollection.left,
-      this.pointCollection.top,
-      this.pointCollection.width,
-      this.pointCollection.height
-    );
-  }
-
-  private setupScissor(): void {
-    const sr = new ScaledResolution(Client.getMinecraft());
-    const scaleFactor = sr.func_78325_e(); // getScaleFactor
-
-    GL11.glScissor(
-      this.pointCollection.left * scaleFactor,
-      this.pointCollection.top * scaleFactor,
-      this.pointCollection.width * scaleFactor,
-      this.pointCollection.height * scaleFactor
-    );
-  }
-
   public drawLive(text: string): void {
-    if (
-      !this.gui.isOpen() ||
-      this.pointCollection.currentPlotPoints.length === 0
-    ) {
-      if (this.display.getLines().length > 0) this.display.clearLines();
-      return;
-    }
-    this.display.setLine(
-      0,
-      new DisplayLine(`§l${text}`).setAlign(DisplayHandler.Align.CENTER)
-    );
-
-    this.setupScissor();
-
-    this.drawOutOfBoundsBackground();
+    if (!this.beginDraw(text)) return;
 
     GL11.glDisable(GL11.GL_TEXTURE_2D);
     GL11.glEnable(GL11.GL_SCISSOR_TEST);

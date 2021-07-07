@@ -1,4 +1,3 @@
-import { Range } from "./constants";
 import { Square } from "./square";
 import { findBounds } from "./utils/index";
 export class PointCollection {
@@ -42,7 +41,7 @@ export class PointCollection {
         this.totalPlotPoints = points;
     }
     setGraphRange(type) {
-        this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
+        this.currentPlotPoints = this.totalPlotPoints.slice(-type);
     }
     priceToPoint(index, price) {
         const x = MathLib.map(index, 0, this.totalDays, this.left, this.right);

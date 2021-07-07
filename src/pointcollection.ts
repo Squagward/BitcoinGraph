@@ -68,8 +68,8 @@ export class PointCollection {
     this.totalPlotPoints = points;
   }
 
-  public setGraphRange(type: string): void {
-    this.currentPlotPoints = this.totalPlotPoints.slice(-Range[type]);
+  public setGraphRange(type: number): void {
+    this.currentPlotPoints = this.totalPlotPoints.slice(-type);
   }
 
   public priceToPoint(index: number, price: number): ScreenPoint {

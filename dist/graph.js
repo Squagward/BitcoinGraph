@@ -12,8 +12,7 @@ export class BitcoinGraph {
             .setRenderLoc(this.pointCollection.left - 10, Renderer.screen.getHeight() / 2)
             .setAlign(DisplayHandler.Align.RIGHT)
             .setBackground(DisplayHandler.Background.FULL)
-            .setTextColor(Renderer.color(...Colors.TEXT))
-            .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND));
+            .setBackgroundColor(Renderer.color(...Colors.TEXT_BACKGROUND, 200));
         this.axes = [
             [this.pointCollection.left, this.pointCollection.top],
             [this.pointCollection.left, this.pointCollection.bottom],
@@ -138,16 +137,29 @@ export class BitcoinGraph {
         GL11.glEnd();
         GL11.glPopMatrix();
     }
-    draw(text) {
+    drawOutOfBoundsBackground() {
+        Renderer.drawRect(Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS), this.pointCollection.left, this.pointCollection.top, this.pointCollection.width, this.pointCollection.height);
+    }
+    setupScissor() {
+        const sr = new ScaledResolution(Client.getMinecraft());
+        const scaleFactor = sr.func_78325_e();
+        GL11.glScissor(this.pointCollection.left * scaleFactor, this.pointCollection.top * scaleFactor, this.pointCollection.width * scaleFactor, this.pointCollection.height * scaleFactor);
+    }
+    beginDraw(text) {
         if (!this.gui.isOpen() ||
             this.pointCollection.currentPlotPoints.length === 0) {
             if (this.display.getLines().length > 0)
                 this.display.clearLines();
-            return;
+            return false;
         }
         this.display.setLine(0, new DisplayLine(`§l${text}`).setAlign(DisplayHandler.Align.CENTER));
-        this.setupScissor();
         this.drawOutOfBoundsBackground();
+        this.setupScissor();
+        return true;
+    }
+    draw(text) {
+        if (!this.beginDraw(text))
+            return;
         const { changedVar: changedPos, list: pointList } = createList(this.changedPos, this.pointList, this.shadeGraphBackground, this.drawAxes, this.drawPoints);
         this.changedPos = changedPos;
         this.pointList = pointList;
@@ -157,24 +169,9 @@ export class BitcoinGraph {
         GL11.glCallList(this.pointList);
         GL11.glCallList(this.lineList);
     }
-    drawOutOfBoundsBackground() {
-        Renderer.drawRect(Renderer.color(...Colors.GRAPH_OUT_OF_BOUNDS), this.pointCollection.left, this.pointCollection.top, this.pointCollection.width, this.pointCollection.height);
-    }
-    setupScissor() {
-        const sr = new ScaledResolution(Client.getMinecraft());
-        const scaleFactor = sr.func_78325_e();
-        GL11.glScissor(this.pointCollection.left * scaleFactor, this.pointCollection.top * scaleFactor, this.pointCollection.width * scaleFactor, this.pointCollection.height * scaleFactor);
-    }
     drawLive(text) {
-        if (!this.gui.isOpen() ||
-            this.pointCollection.currentPlotPoints.length === 0) {
-            if (this.display.getLines().length > 0)
-                this.display.clearLines();
+        if (!this.beginDraw(text))
             return;
-        }
-        this.display.setLine(0, new DisplayLine(`§l${text}`).setAlign(DisplayHandler.Align.CENTER));
-        this.setupScissor();
-        this.drawOutOfBoundsBackground();
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
         this.pointCollection.updateRanges();

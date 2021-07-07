@@ -10,7 +10,6 @@ import {
 } from "../../Elementa/index";
 // @ts-ignore
 import PogObject from "../../PogData";
-import type { Triplet } from "./types";
 import {
   getDayOfMonthsAgo,
   getDayOfYear,
@@ -32,17 +31,16 @@ export const WebSocketClient = Java.type(
 
 const Color = Java.type("java.awt.Color");
 
-export const Colors: Record<string, Triplet> = {
-  TEXT: [214, 200, 49] as Triplet,
-  TEXT_BACKGROUND: [77, 77, 77] as Triplet,
-  GRAPH_OUT_OF_BOUNDS: [100, 100, 100] as Triplet,
-  AXES: [235, 64, 52].map((v) => v / 255) as Triplet,
-  POINTS: [52, 168, 235].map((v) => v / 255) as Triplet,
-  INTERSECT_LINES: [52, 235, 101].map((v) => v / 255) as Triplet,
-  GRAPH_BACKGROUND: [77, 77, 77].map((v) => v / 255) as Triplet
-};
+export const Colors = {
+  TEXT_BACKGROUND: [51, 51, 51],
+  GRAPH_OUT_OF_BOUNDS: [76, 76, 76],
+  AXES: [0.92, 0.25, 0.2],
+  POINTS: [0.2, 0.66, 0.92],
+  INTERSECT_LINES: [0.2, 0.92, 0.4],
+  GRAPH_BACKGROUND: [0.2, 0.2, 0.2]
+} as const;
 
-export const StartDates: Record<string, number> = {
+export const StartDates = {
   BTC: 1437350400000, // "2015-07-20"
   ETH: 1463529600000, // "2016-05-18"
   DOGE: 1622678400000, // "2021-06-03"
@@ -61,14 +59,14 @@ export const StartDates: Record<string, number> = {
   XTZ: 1565049600000, // "2019-08-06"
   YFI: 1600128000000, // "2020-09-15"
   NU: 1606867200000 // "2020-12-02"
-};
+} as const;
 
 export const enum Mode {
   HISTORICAL,
   LIVE
 }
 
-export const Range: Record<string, number> = {
+export const Range = {
   "5d": 5,
   "1m": getDaysBetween(getDayOfMonthsAgo(1)),
   "3m": getDaysBetween(getDayOfMonthsAgo(3)),
@@ -78,9 +76,9 @@ export const Range: Record<string, number> = {
   "2y": getDaysBetween(getDayOfYearsAgo(2)),
   "5y": getDaysBetween(getDayOfYearsAgo(5)),
   "max": 0
-};
+} as const;
 
-export const entries = Object.entries(StartDates);
+export const entries = Object.entries<number>(StartDates);
 
 export const data = new PogObject("BitcoinGraph", { x: 0, y: 0 });
 data.autosave();
