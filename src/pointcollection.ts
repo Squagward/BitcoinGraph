@@ -1,4 +1,4 @@
-import { Mode, Range } from "./constants";
+import { Mode } from "./constants";
 import { Square } from "./square";
 import type { DataPoint, ScreenPoint } from "./types";
 import { findBounds } from "./utils/index";

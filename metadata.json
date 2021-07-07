@@ -1,7 +1,7 @@
 {
   "name": "BitcoinGraph",
   "creator": "Squagward",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "entry": "index.js",
   "description": "Shows historical & live price data for various cryptocurrencies provided by CoinBase Pro's API",
   "helpMessage": "\n§9BitcoinGraph by Squagward\n/btc to open the settings menu!\n",

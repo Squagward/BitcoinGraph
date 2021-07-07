@@ -24,10 +24,10 @@ const displaySocket = new JavaAdapter(WebSocketClient, {
         lines[2].setText(`24h Volume: ${addCommas(Number(volume_24h))}`);
         lines[3].setText(`24h Low: $${addCommas(Number(low_24h))}`);
         lines[4].setText(`24h High: $${addCommas(Number(high_24h))}`);
-        lines[5].setText(`30d Volume: ${addCommas(Number(volume_30d))}`);
-        lines[6].setText(`Time: ${formatTime(time)}`);
-        lines[7].setText(`Last Size: ${addCommas(Number(last_size))} ($${addCommas(Number(last_size) * Number(price))})`);
-        lines[8].setText(`24h Change: ${currentSymbol} ${priceRange >= 0 ? "+" : ""}${addCommas(priceRange, findDecimalPlaces(Number(price)))} (${pricePercentDiff >= 0 ? "+" : ""}${pricePercentDiff.toFixed(4)}%)`);
+        lines[5].setText(`24h Change: ${currentSymbol} ${priceRange >= 0 ? "+" : ""}${addCommas(priceRange, findDecimalPlaces(Number(price)))} (${pricePercentDiff >= 0 ? "+" : ""}${pricePercentDiff.toFixed(4)}%)`);
+        lines[6].setText(`30d Volume: ${addCommas(Number(volume_30d))}`);
+        lines[7].setText(`Time: ${formatTime(time)}`);
+        lines[8].setText(`Last Size: ${addCommas(Number(last_size))} ($${addCommas(Number(last_size) * Number(price))})`);
         lastPrice = Number(price);
     }
 }, new URI("wss://ws-feed.pro.coinbase.com"));
@@ -63,10 +63,10 @@ register("step", () => {
         lines[2].setText(`24h Volume:`);
         lines[3].setText(`24h Low:`);
         lines[4].setText(`24h High:`);
-        lines[5].setText(`30d Volume:`);
-        lines[6].setText(`Time:`);
-        lines[7].setText(`Last Size:`);
-        lines[8].setText(`24h Change:`);
+        lines[5].setText(`24h Change:`);
+        lines[6].setText(`30d Volume:`);
+        lines[7].setText(`Time:`);
+        lines[8].setText(`Last Size:`);
     }
     if (Settings.startLiveHud) {
         displaySocket.send(JSON.stringify({
