@@ -10,10 +10,14 @@ export const addCommas = (
 };
 
 export const formatDate = (date: number): string => {
-  return new Date(date).toISOString().split("T")[0];
+  return new Date(date).toISOString().substring(0, 10);
+};
+
+export const formatTime = (time: string): string => {
+  return time.substring(11, 19);
 };
 
 export const findDecimalPlaces = (num: number): number => {
   const length = String(num).split(".")[1]?.length ?? 0;
-  return MathLib.clamp(length, 2, 6);
+  return MathLib.clamp(length, 2, 4);
 };

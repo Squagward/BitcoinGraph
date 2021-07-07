@@ -2,7 +2,7 @@ import { request } from "../../../requestV2";
 import Settings from "../../dist/settings";
 import { entries, Range, URI, WebSocketClient } from "../constants";
 import { BitcoinGraph } from "../graph";
-import { formatDate } from "../utils/format";
+import { formatDate, formatTime } from "../utils/format";
 import { getDatesForLooping } from "../utils/index";
 const graph = new BitcoinGraph();
 const today = formatDate(Date.now());
@@ -71,7 +71,7 @@ const graphSocket = new JavaAdapter(WebSocketClient, {
         if (time === undefined)
             return;
         points.push({
-            date: time.split("T")[1].substring(0, 8),
+            date: formatTime(time),
             price: Number(price)
         });
         graph.pointCollection.setPlotPoints(points);

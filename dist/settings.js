@@ -68,23 +68,87 @@ class Settings {
   }
 
   @SwitchProperty({
-    name: "Toggle Daily % Change Display",
-    description: "Click to toggle the daily info display",
-    category: "Live Display",
+    name: "Toggle Live HUD",
+    description: "Click to toggle the live HUD",
+    category: "Live Display"
   })
-  toggleDailyDisplay = false;
+  toggleliveHud = false;
 
-  sendDisplayRequest = false;
+  @SwitchProperty({
+    name: "Show Price",
+    description: "Click to show the price",
+    category: "Live Display"
+  })
+  togglePrice = false;
+
+  @SwitchProperty({
+    name: "Show 24h Open",
+    description: "Click to show the 24h open price",
+    category: "Live Display"
+  })
+  toggleOpen = false;
+
+  @SwitchProperty({
+    name: "Show 24h Volume",
+    description: "Click to show the 24h volume",
+    category: "Live Display"
+  })
+  toggleVolume24h = false;
+
+  @SwitchProperty({
+    name: "Show 24h Low",
+    description: "Click to show the 24h low price",
+    category: "Live Display"
+  })
+  toggleLow24h = false;
+
+  @SwitchProperty({
+    name: "Show 24h High",
+    description: "Click to show the 24h high price",
+    category: "Live Display"
+  })
+  toggleHigh24h = false;
+
+  @SwitchProperty({
+    name: "Show 24h Change",
+    description: "Click to show the 24h change",
+    category: "Live Display"
+  })
+  toggleChange24h = false;
+
+  @SwitchProperty({
+    name: "Show 30d Volume",
+    description: "Click to show the 30d volume",
+    category: "Live Display"
+  })
+  toggleVolume30d = false;
+
+  @SwitchProperty({
+    name: "Show Time",
+    description: "Click to show the time",
+    category: "Live Display"
+  })
+  toggleTime = false;
+
+  @SwitchProperty({
+    name: "Show Last Size",
+    description: "Click to show the last trade size",
+    category: "Live Display"
+  })
+  toggleLastSize = false;
+
+  startLiveHud = false;
 
   @ButtonProperty({
-    name: "Start Daily % Change Display",
-    description: "Click to start daily data display",
+    name: "Start Live HUD",
+    description: "Click to start the live HUD",
     category: "Live Display",
     placeholder: "Request"
   })
-  toggleTheDisplay() {
-    if (!this.toggleDailyDisplay) return;
-    this.sendDisplayRequest = true;
+  toggleLiveHudFunc() {
+    if (!this.toggleliveHud) return;
+    Client.currentGui.close();
+    this.startLiveHud = true;
   }
 
   @ButtonProperty({
@@ -93,7 +157,7 @@ class Settings {
     category: "Live Display"
   })
   openDraggableGui() {
-    if (!this.toggleDailyDisplay) return;
+    if (!this.toggleliveHud) return;
     liveGui.open();
   }
 
@@ -105,8 +169,8 @@ class Settings {
     );
     this.setCategoryDescription(
       "Live Display",
-      "Options for the live display HUD"
-    )
+      "Options for the live display HUD."
+    );
   }
 }
 

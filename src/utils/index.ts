@@ -1,3 +1,8 @@
+import {
+  PixelConstraint,
+  SiblingConstraint,
+  UIText
+} from "../../../Elementa/index";
 // @ts-ignore
 import * as moment from "../../../moment";
 import { GL11 } from "../constants";
@@ -61,4 +66,27 @@ export const getDatesForLooping = (startDate: number): string[] => {
     start = moment(getFinalDayInRange(start)).utc().valueOf();
   }
   return dates;
+};
+
+const createEmptyChild = (): UIText => {
+  return new UIText("")
+    .setX(new PixelConstraint(5))
+    .setY(new SiblingConstraint());
+};
+
+export const createEmptyChildren = (amount: number): UIText[] => {
+  const arr: UIText[] = [];
+  for (let i = 0; i < amount; i++) {
+    arr.push(createEmptyChild());
+  }
+  return arr;
+};
+
+export const getPriceChangeColor = (
+  currentPrice: number,
+  lastPrice: number
+) => {
+  if (currentPrice < lastPrice) return "§c";
+  if (currentPrice > lastPrice) return "§a";
+  return "";
 };

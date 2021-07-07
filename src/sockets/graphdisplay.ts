@@ -5,7 +5,7 @@ import Settings from "../../dist/settings";
 import { entries, Mode, Range, URI, WebSocketClient } from "../constants";
 import { BitcoinGraph } from "../graph";
 import type { DataEntry, DataPoint, WebSocketData } from "../types";
-import { formatDate } from "../utils/format";
+import { formatDate, formatTime } from "../utils/format";
 import { getDatesForLooping } from "../utils/index";
 
 const graph = new BitcoinGraph();
@@ -90,7 +90,7 @@ const graphSocket = new JavaAdapter(
       const { time, price }: WebSocketData = JSON.parse(message);
       if (time === undefined) return;
       points.push({
-        date: time.split("T")[1].substring(0, 8),
+        date: formatTime(time),
         price: Number(price)
       });
       graph.pointCollection.setPlotPoints(points);
