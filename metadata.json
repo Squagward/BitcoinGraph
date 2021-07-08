@@ -1,17 +1,10 @@
 {
   "name": "BitcoinGraph",
   "creator": "Squagward",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "entry": "index.js",
   "description": "Shows historical & live price data for various cryptocurrencies provided by CoinBase Pro's API",
   "helpMessage": "\n§9BitcoinGraph by Squagward\n/btc to open the settings menu!\n",
-  "requires": [
-    "Elementa",
-    "moment",
-    "numeraljs",
-    "PogData",
-    "requestV2",
-    "Vigilance"
-  ],
+  "requires": ["Elementa", "moment", "PogData", "requestV2", "Vigilance"],
   "$schema": "../CTAutocomplete/schema.json"
 }
